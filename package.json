@@ -24,6 +24,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "aws-cdk-lib": "^2.261.0",
+    "constructs": "^10.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
