@@ -42,12 +42,12 @@ export function AlbumSearch() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search for an album…"
-          className="flex-1 rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700"
+          className="flex-1 rounded-md border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-spotify-green dark:border-zinc-700"
         />
         <button
           type="submit"
           disabled={isSearching || !query.trim()}
-          className="shrink-0 rounded-md bg-foreground px-4 py-2 text-sm text-background disabled:opacity-50"
+          className="shrink-0 rounded-md bg-spotify-green px-4 py-2 text-sm font-medium text-black transition hover:brightness-110 disabled:opacity-50"
         >
           {isSearching ? "Searching…" : "Search"}
         </button>
@@ -80,7 +80,11 @@ export function AlbumSearch() {
                 <button
                   onClick={() => handleQueue(album)}
                   disabled={queued || isQueuing}
-                  className="shrink-0 rounded-md border border-zinc-300 px-3 py-1 text-xs disabled:opacity-50 dark:border-zinc-700"
+                  className={
+                    queued
+                      ? "shrink-0 rounded-md border border-spotify-green px-3 py-1 text-xs text-spotify-green disabled:opacity-50"
+                      : "shrink-0 rounded-md border border-zinc-300 px-3 py-1 text-xs hover:border-spotify-green hover:text-spotify-green disabled:opacity-50 dark:border-zinc-700"
+                  }
                 >
                   {queued ? "Queued" : "Queue"}
                 </button>
