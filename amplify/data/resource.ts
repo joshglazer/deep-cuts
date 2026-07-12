@@ -1,0 +1,66 @@
+import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { pollSpotify } from "../functions/poll-spotify/resource";
+
+/**
+ * Data model for Deep Cuts.
+ *
+ * There's no Cognito user pool or Identity Pool in this stack — login is
+ * handled by Auth.js against Spotify, not Amplify Auth — so records are
+ * scoped to a user via `spotifyUserId` and filtered in application code
+ * rather than Amplify's owner-based authorization rules.
+ *
+ * Two callers, two auth strategies:
+ *  - The Next.js server (route handlers / server actions / server
+ *    components — never client components) uses the API key. Amplify writes
+ *    it into amplify_outputs.json, which is only ever imported from
+ *    server-only modules, so it's never shipped to the browser.
+ *  - The poll-spotify scheduled function is granted schema-wide IAM access
+ *    via the top-level `allow.resource(...)` rule below — no key to manage
+ *    there at all.
+ */
+const schema = a
+  .schema({
+    Artist: a
+      .model({
+        spotifyUserId: a.string().required(),
+        spotifyArtistId: a.string().required(),
+        name: a.string().required(),
+        imageUrl: a.string(),
+        queuedAt: a.datetime().required(),
+      })
+      .authorization((allow) => [allow.publicApiKey()]),
+
+    Album: a
+      .model({
+        spotifyUserId: a.string().required(),
+        spotifyAlbumId: a.string().required(),
+        spotifyArtistId: a.string().required(),
+        name: a.string().required(),
+        artistName: a.string().required(),
+        imageUrl: a.string(),
+        queuedAt: a.datetime().required(),
+      })
+      .authorization((allow) => [allow.publicApiKey()]),
+
+    ListenEvent: a
+      .model({
+        spotifyUserId: a.string().required(),
+        spotifyTrackId: a.string().required(),
+        spotifyAlbumId: a.string(),
+        spotifyArtistId: a.string(),
+        trackName: a.string().required(),
+        playedAt: a.datetime().required(),
+      })
+      .authorization((allow) => [allow.publicApiKey()]),
+  })
+  .authorization((allow) => [allow.resource(pollSpotify)]);
+
+export type Schema = ClientSchema<typeof schema>;
+
+export const data = defineData({
+  schema,
+  authorizationModes: {
+    defaultAuthorizationMode: "apiKey",
+    apiKeyAuthorizationMode: { expiresInDays: 30 },
+  },
+});
