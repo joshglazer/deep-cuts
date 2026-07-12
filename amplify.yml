@@ -12,6 +12,12 @@ frontend:
         - npm install
     build:
       commands:
+        # Amplify Hosting only exposes console-configured env vars to the
+        # build step by default, not to the deployed Next.js server runtime
+        # (route handlers, server actions, middleware) — writing them into
+        # .env.production is the documented way to bridge that gap:
+        # https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
+        - env | grep -e AUTH_SECRET -e AUTH_SPOTIFY_ID -e AUTH_SPOTIFY_SECRET >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
