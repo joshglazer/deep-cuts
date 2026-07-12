@@ -14,6 +14,26 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".amplify/**",
   ]),
+  // Astryx components may only be imported inside src/design; everywhere
+  // else must go through the branded wrappers exported from there.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/design/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@astryxdesign/*", "@astryxdesign/**"],
+              message:
+                "Import astryx components via the design system in src/design instead of importing @astryxdesign/* directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

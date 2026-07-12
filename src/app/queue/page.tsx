@@ -4,6 +4,12 @@ import { dataClient } from "@/lib/amplify-server";
 import { Header } from "@/components/Header";
 import { AlbumSearch } from "./AlbumSearch";
 import { removeAlbum } from "./actions";
+import { AlbumRow } from "@/design/molecules/AlbumRow";
+import { Button } from "@/design/atoms/Button";
+import { EmptyState } from "@/design/atoms/EmptyState";
+import { Heading } from "@/design/atoms/Heading";
+import { Text } from "@/design/atoms/Text";
+import { VStack } from "@/design/atoms/Stack";
 
 export default async function QueuePage() {
   const session = await auth();
@@ -23,53 +29,47 @@ export default async function QueuePage() {
     }),
   ]);
 
+  const isEmpty = artists.length === 0 && albums.length === 0;
+
   return (
     <div>
       <Header />
       <div className="mx-auto max-w-2xl px-6 py-16">
-        <h1 className="mb-8 text-2xl font-semibold">Your queue</h1>
+        <Heading level={1} className="mb-8">
+          Your queue
+        </Heading>
 
         <AlbumSearch />
 
-        {artists.length === 0 && albums.length === 0 ? (
-          <p className="text-zinc-500">
-            Nothing queued yet. Search and add an artist or album to get
-            started.
-          </p>
+        {isEmpty ? (
+          <EmptyState
+            title="Nothing queued yet"
+            description="Search and add an artist or album to get started."
+          />
         ) : (
-          <ul className="space-y-3">
+          <VStack gap="sm">
             {artists.map((artist) => (
-              <li key={artist.id}>{artist.name} (artist)</li>
+              <Text key={artist.id}>{artist.name} (artist)</Text>
             ))}
             {albums.map((album) => (
-              <li
+              <AlbumRow
                 key={album.id}
-                className="flex items-center justify-between gap-3"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  {album.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={album.imageUrl}
-                      alt=""
-                      className="h-10 w-10 shrink-0 rounded object-cover"
+                name={album.name}
+                artistName={album.artistName}
+                imageUrl={album.imageUrl}
+                endContent={
+                  <form action={removeAlbum.bind(null, album.id)}>
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      size="sm"
+                      label="Remove"
                     />
-                  )}
-                  <span className="truncate">
-                    {album.name} — {album.artistName} (album)
-                  </span>
-                </div>
-                <form action={removeAlbum.bind(null, album.id)}>
-                  <button
-                    type="submit"
-                    className="shrink-0 text-xs text-zinc-500 hover:text-red-500"
-                  >
-                    Remove
-                  </button>
-                </form>
-              </li>
+                  </form>
+                }
+              />
             ))}
-          </ul>
+          </VStack>
         )}
       </div>
     </div>
