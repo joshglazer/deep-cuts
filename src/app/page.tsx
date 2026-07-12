@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth, previewLoginEnabled, signIn } from "@/auth";
 import { Button } from "@/design/atoms/Button";
 import { Heading } from "@/design/atoms/Heading";
 import { Text } from "@/design/atoms/Text";
@@ -20,20 +20,37 @@ export default async function Home() {
         listening to them.
       </Text>
 
-      <form
-        action={async () => {
-          "use server";
-          await signIn("spotify");
-        }}
-      >
-        <Button
-          type="submit"
-          variant="primary"
-          label="Sign in with Spotify"
-          icon={<SiSpotify className="h-5 w-5 shrink-0 fill-current" />}
-          className="rounded-full"
-        />
-      </form>
+      <VStack gap="sm" hAlign="center">
+        <form
+          action={async () => {
+            "use server";
+            await signIn("spotify");
+          }}
+        >
+          <Button
+            type="submit"
+            variant="primary"
+            label="Sign in with Spotify"
+            icon={<SiSpotify className="h-5 w-5 shrink-0 fill-current" />}
+            className="rounded-full"
+          />
+        </form>
+        {previewLoginEnabled && (
+          <form
+            action={async () => {
+              "use server";
+              await signIn("preview");
+            }}
+          >
+            <Button
+              type="submit"
+              variant="ghost"
+              size="sm"
+              label="Preview sign-in (no Spotify)"
+            />
+          </form>
+        )}
+      </VStack>
     </VStack>
   );
 }

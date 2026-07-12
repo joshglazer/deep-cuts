@@ -96,6 +96,38 @@ workflow, not accidental — just know it's happening.
    (`https://<your-domain>/api/auth/callback/spotify`) to your Spotify app's
    redirect URIs.
 
+## Preview environments
+
+Amplify Hosting can deploy every pull request as its own ephemeral,
+full-stack environment — frontend *and* a fresh backend (DynamoDB table,
+poll-spotify function) — and tear it down when the PR closes.
+
+1. In the Amplify console: App settings → Previews → enable pull request
+   previews (this installs/uses the Amplify GitHub App on this repo).
+2. Recommended: App settings → Access control → restrict preview branches
+   with HTTP basic auth, since preview URLs are otherwise reachable by
+   anyone who has the link.
+3. `AUTH_URL` no longer needs to be set by hand per preview — `amplify.yml`
+   derives it from the branch's own `*.amplifyapp.com` domain
+   (`AWS_BRANCH`/`AWS_APP_ID`, both set automatically by Amplify) whenever
+   `AUTH_URL` isn't explicitly configured in the console. Keep setting it
+   explicitly only for branches with a fixed non-default domain (e.g.
+   production behind a custom domain).
+4. Spotify OAuth itself won't work out of the box on a preview: Spotify
+   requires each redirect URI to be registered exactly, no wildcards, and a
+   preview's URL (`https://pr-<number>.<app-id>.amplifyapp.com`) is dynamic.
+   To test the real sign-in flow on a given PR, add that one callback URL
+   to your Spotify app's redirect URIs while you need it.
+5. To view signed-in pages without doing that every time, set
+   `ENABLE_PREVIEW_LOGIN=true` as an environment variable scoped to preview
+   branches only (Amplify console → Environment variables → scope to "All
+   pull-request previews") — **never** set it on the production branch.
+   This adds a "Preview sign-in" button on the homepage that creates a fake
+   session, so you can exercise the queue page (list, add, remove) against
+   that preview's own backend. It carries no real Spotify access token, so
+   Spotify-backed features (album search) stay non-functional under it —
+   use the real Spotify sign-in (step 4) when you need those.
+
 ## What's scaffolded vs. what's left
 
 Scaffolded: project structure, Spotify OAuth sign-in, the DynamoDB data
