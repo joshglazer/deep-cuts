@@ -17,7 +17,7 @@ frontend:
         # (route handlers, server actions, middleware) — writing them into
         # .env.production is the documented way to bridge that gap:
         # https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
-        - env | grep -e AUTH_SECRET -e AUTH_SPOTIFY_ID -e AUTH_SPOTIFY_SECRET >> .env.production
+        - env | grep -e AUTH_SECRET -e AUTH_SPOTIFY_ID -e AUTH_SPOTIFY_SECRET -e AUTH_URL >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next

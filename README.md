@@ -68,9 +68,18 @@ workflow, not accidental — just know it's happening.
    and deploys both the Next.js frontend and the `amplify/` backend
    (DynamoDB table, poll-spotify function) on every push to the connected
    branch.
-3. In the Amplify console, set the `AUTH_SPOTIFY_ID`, `AUTH_SPOTIFY_SECRET`,
-   and `AUTH_SECRET` environment variables (same values as your
-   `.env.local`).
+3. In the Amplify console, set these environment variables:
+   - `AUTH_SPOTIFY_ID`, `AUTH_SPOTIFY_SECRET`, `AUTH_SECRET` — same values as
+     your `.env.local`
+   - `AUTH_URL` — the app's deployed URL, e.g.
+     `https://main.<app-id>.amplifyapp.com` (update this if you later attach
+     a custom domain)
+
+   Amplify Hosting only exposes these to the *build* step by default, not to
+   the deployed Next.js server (route handlers, server actions,
+   middleware) — `amplify.yml` explicitly writes them into `.env.production`
+   during the build to bridge that gap. If you add more server-only env
+   vars later, add them to that same `env | grep -e ...` line too.
 4. Add the deployed domain's callback URL
    (`https://<your-domain>/api/auth/callback/spotify`) to your Spotify app's
    redirect URIs.
