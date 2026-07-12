@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth, signIn, signOut } from "@/auth";
+import { auth, previewLoginEnabled, signIn, signOut } from "@/auth";
 
 export default async function Home() {
   const session = await auth();
@@ -40,19 +40,36 @@ export default async function Home() {
           </form>
         </div>
       ) : (
-        <form
-          action={async () => {
-            "use server";
-            await signIn("spotify");
-          }}
-        >
-          <button
-            type="submit"
-            className="rounded-full bg-[#1DB954] px-5 py-3 font-medium text-black"
+        <div className="flex flex-col items-center gap-3">
+          <form
+            action={async () => {
+              "use server";
+              await signIn("spotify");
+            }}
           >
-            Connect Spotify
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="rounded-full bg-[#1DB954] px-5 py-3 font-medium text-black"
+            >
+              Connect Spotify
+            </button>
+          </form>
+          {previewLoginEnabled && (
+            <form
+              action={async () => {
+                "use server";
+                await signIn("preview");
+              }}
+            >
+              <button
+                type="submit"
+                className="text-sm text-zinc-500 underline-offset-4 hover:underline"
+              >
+                Preview sign-in (no Spotify)
+              </button>
+            </form>
+          )}
+        </div>
       )}
     </div>
   );

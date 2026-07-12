@@ -1,5 +1,6 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Spotify from "next-auth/providers/spotify";
+import Credentials from "next-auth/providers/credentials";
 
 // Scopes needed to read what's currently/recently playing (for the polling
 // job) and to look up the user's profile id (used as the partition key for
@@ -12,6 +13,37 @@ const SPOTIFY_SCOPES = [
   "user-top-read",
 ].join(" ");
 
+// PR previews get a dynamic amplifyapp.com URL per preview, and Spotify
+// requires each OAuth redirect URI to be registered exactly (no wildcards)
+// — so previews can't complete the real Spotify sign-in without registering
+// that one-off URL first. This flag adds a second, fake-session sign-in path
+// so signed-in pages are still viewable without that step. Only ever set
+// `ENABLE_PREVIEW_LOGIN=true` on preview branches in the Amplify console
+// (scoped to "All pull-request previews"), never on the production branch.
+export const previewLoginEnabled = process.env.ENABLE_PREVIEW_LOGIN === "true";
+
+const providers: NextAuthConfig["providers"] = [
+  Spotify({
+    authorization: `https://accounts.spotify.com/authorize?scope=${SPOTIFY_SCOPES}`,
+  }),
+];
+
+if (previewLoginEnabled) {
+  // No real Spotify access token comes with this, so Spotify-backed
+  // features (album search) stay non-functional — see AlbumSearch's
+  // existing "Couldn't search Spotify" error path.
+  providers.push(
+    Credentials({
+      id: "preview",
+      name: "Preview sign-in",
+      credentials: {},
+      async authorize() {
+        return { id: "preview-user", name: "Preview User" };
+      },
+    })
+  );
+}
+
 // Exported (not just passed to NextAuth below) so the route handler can call
 // Auth() directly with a corrected request — see the comment in
 // src/app/api/auth/[...nextauth]/route.ts for why that's necessary.
@@ -21,11 +53,7 @@ export const authConfig: NextAuthConfig = {
   // this it can't build absolute callback/redirect URLs — sign-out redirects
   // to literally "undefined" as a result.
   trustHost: true,
-  providers: [
-    Spotify({
-      authorization: `https://accounts.spotify.com/authorize?scope=${SPOTIFY_SCOPES}`,
-    }),
-  ],
+  providers,
   callbacks: {
     // TODO (backend build-out): access tokens expire after 1hr — refresh
     // using token.refreshToken when token.expiresAt has passed, and persist

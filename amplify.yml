@@ -12,12 +12,22 @@ frontend:
         - npm install
     build:
       commands:
+        # AUTH_URL must match the exact origin Auth.js builds callback URLs
+        # against (see src/auth.ts). Branches with a fixed URL can still set
+        # it explicitly in the console (e.g. production behind a custom
+        # domain) — but PR previews get a fresh, unpredictable
+        # pr-<n>.<app-id>.amplifyapp.com origin per branch, so default to
+        # Amplify's own default domain for this build when it's not set.
+        - |
+          if [ -z "$AUTH_URL" ]; then
+            export AUTH_URL="https://${AWS_BRANCH}.${AWS_APP_ID}.amplifyapp.com"
+          fi
         # Amplify Hosting only exposes console-configured env vars to the
         # build step by default, not to the deployed Next.js server runtime
         # (route handlers, server actions, middleware) — writing them into
         # .env.production is the documented way to bridge that gap:
         # https://docs.aws.amazon.com/amplify/latest/userguide/ssr-environment-variables.html
-        - env | grep -e AUTH_SECRET -e AUTH_SPOTIFY_ID -e AUTH_SPOTIFY_SECRET -e AUTH_URL >> .env.production
+        - env | grep -e AUTH_SECRET -e AUTH_SPOTIFY_ID -e AUTH_SPOTIFY_SECRET -e AUTH_URL -e ENABLE_PREVIEW_LOGIN >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
