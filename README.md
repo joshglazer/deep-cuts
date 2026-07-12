@@ -27,25 +27,36 @@ with no fixed floor, and realistically free at personal-project scale.
 
 ## Prerequisites
 
-- An AWS account, with the AWS CLI configured (`aws configure`) using
-  credentials that can deploy CloudFormation/CDK stacks.
+- An AWS account, with the AWS CLI configured using credentials that can
+  deploy CloudFormation/CDK stacks — this project uses a named profile,
+  `deep-cuts` (`aws configure --profile deep-cuts`), rather than relying on
+  whatever the default profile happens to point to. That account/region also
+  needs to be CDK-bootstrapped once before the sandbox will deploy:
+  `npx cdk bootstrap aws://<account-id>/<region> --profile deep-cuts`.
 - A Spotify app, created at the
   [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
-  Add `http://localhost:3000/api/auth/callback/spotify` as a redirect URI
+  Add `http://127.0.0.1:3000/api/auth/callback/spotify` as a redirect URI
   for local dev (add your production URL there too once you've deployed).
+  Spotify only allows `http://` for the loopback IP literal `127.0.0.1`, not
+  the `localhost` hostname, so use `127.0.0.1` consistently — including in
+  the browser URL bar when testing locally.
 
 ## Local development
 
 ```bash
 cp .env.local.example .env.local
 # fill in AUTH_SPOTIFY_ID / AUTH_SPOTIFY_SECRET from your Spotify app,
-# and generate AUTH_SECRET with: npx auth secret
+# generate AUTH_SECRET with: npx auth secret, and leave AUTH_URL as
+# http://127.0.0.1:3000 (see .env.local.example for why it's needed —
+# without it, sign-in fails at the Spotify callback with
+# "invalid_grant: Invalid redirect URI")
 
 npm install
-npx ampx sandbox   # provisions a personal, live copy of the backend (DynamoDB
-                    # table + poll-spotify function) in your AWS account and
-                    # writes amplify_outputs.json — leave this running while
-                    # you develop; Ctrl-C tears it down
+npm run sandbox   # runs `ampx sandbox --profile deep-cuts` — provisions a
+                   # personal, live copy of the backend (DynamoDB table +
+                   # poll-spotify function) in your AWS account and writes
+                   # amplify_outputs.json — leave this running while you
+                   # develop; Ctrl-C tears it down
 ```
 
 In a second terminal:
@@ -54,7 +65,8 @@ In a second terminal:
 npm run dev
 ```
 
-Then open [http://localhost:3000](http://localhost:3000).
+Then open [http://127.0.0.1:3000](http://127.0.0.1:3000) — not `localhost`,
+since that won't match the redirect URI registered on the Spotify app.
 
 Note: `npx ampx sandbox` deploys real (if tiny) AWS resources to your
 account under a per-developer sandbox stack. It's part of the normal Gen 2
