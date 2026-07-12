@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth, signIn, signOut } from "@/auth";
 
 export default async function Home() {
@@ -14,22 +15,30 @@ export default async function Home() {
       </p>
 
       {session ? (
-        <form
-          action={async () => {
-            "use server";
-            await signOut();
-          }}
-        >
-          <p className="mb-4 text-center text-sm text-zinc-500">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-center text-sm text-zinc-500">
             Signed in as {session.user?.name ?? session.spotifyUserId}
           </p>
-          <button
-            type="submit"
+          <Link
+            href="/queue"
             className="rounded-full bg-foreground px-5 py-3 text-background"
           >
-            Sign out
-          </button>
-        </form>
+            View your queue
+          </Link>
+          <form
+            action={async () => {
+              "use server";
+              await signOut();
+            }}
+          >
+            <button
+              type="submit"
+              className="text-sm text-zinc-500 underline-offset-4 hover:underline"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
       ) : (
         <form
           action={async () => {

@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 127.0.0.1",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sandbox": "ampx sandbox"
+    "sandbox": "ampx sandbox --profile deep-cuts"
   },
   "dependencies": {
     "aws-amplify": "^6.18.0",

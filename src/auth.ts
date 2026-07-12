@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthConfig } from "next-auth";
 import Spotify from "next-auth/providers/spotify";
 
 // Scopes needed to read what's currently/recently playing (for the polling
@@ -12,7 +12,10 @@ const SPOTIFY_SCOPES = [
   "user-top-read",
 ].join(" ");
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+// Exported (not just passed to NextAuth below) so the route handler can call
+// Auth() directly with a corrected request — see the comment in
+// src/app/api/auth/[...nextauth]/route.ts for why that's necessary.
+export const authConfig: NextAuthConfig = {
   // Amplify Hosting doesn't set the well-known env vars (e.g. VERCEL_URL)
   // Auth.js otherwise uses to infer its own deployment origin, so without
   // this it can't build absolute callback/redirect URLs — sign-out redirects
@@ -56,4 +59,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session;
     },
   },
-});
+};
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
