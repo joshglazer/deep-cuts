@@ -19,7 +19,15 @@ function withRealHost(request: Request): Request {
   const host = request.headers.get("host");
   if (!host) return request;
   const url = new URL(request.url);
-  url.host = host;
+  // Setting `url.host` alone leaves a stale port in place when `host` has
+  // none (WHATWG URL spec: the host setter only touches the port if the
+  // input string includes one) — e.g. Amplify's SSR runtime hands us a
+  // request.url of "http://localhost:3000/...", and `url.host = host` would
+  // silently keep ":3000" even after swapping in the real hostname. Setting
+  // hostname/port separately clears the stale port when the header has none.
+  const [hostname, port] = host.split(":");
+  url.hostname = hostname;
+  url.port = port ?? "";
   return new Request(url, {
     method: request.method,
     headers: request.headers,
