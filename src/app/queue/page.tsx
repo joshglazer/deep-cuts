@@ -70,15 +70,13 @@ export default async function QueuePage({
 
   // Swap in the artist's real profile image where we can — falls back to the
   // first queued album's cover (set above) if Spotify's API is unreachable.
-  if (view === "artist" && session.accessToken && artistGroups.length > 0) {
+  if (view === "artist" && artistGroups.length > 0) {
     try {
       const spotifyArtistIds = artistGroups.map((artist) => artist.spotifyArtistId);
-      const accessToken = session.accessToken;
       const profileImages = new Map<string, string | undefined>();
       for (let i = 0; i < spotifyArtistIds.length; i += 50) {
         const { artists: spotifyArtists } = await getArtists(
-          spotifyArtistIds.slice(i, i + 50),
-          accessToken
+          spotifyArtistIds.slice(i, i + 50)
         );
         for (const spotifyArtist of spotifyArtists) {
           profileImages.set(spotifyArtist.id, spotifyArtist.images[0]?.url);
