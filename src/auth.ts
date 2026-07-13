@@ -29,9 +29,10 @@ const providers: NextAuthConfig["providers"] = [
 ];
 
 if (previewLoginEnabled) {
-  // No real Spotify access token comes with this, so Spotify-backed
-  // features (album search) stay non-functional — see AlbumSearch's
-  // existing "Couldn't search Spotify" error path.
+  // No real Spotify access token comes with this, so user-specific
+  // Spotify features (e.g. recently-played) stay non-functional — but
+  // album search still works, since it runs on an app-level Client
+  // Credentials token (see spotify.ts) rather than the user's token.
   providers.push(
     Credentials({
       id: "preview",

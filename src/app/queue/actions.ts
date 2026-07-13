@@ -17,12 +17,12 @@ export async function searchAlbums(
   query: string
 ): Promise<AlbumSearchResult[]> {
   const session = await auth();
-  if (!session?.accessToken) {
+  if (!session?.user) {
     throw new Error("Not signed in");
   }
   if (!query.trim()) return [];
 
-  const { albums } = await searchSpotifyAlbums(query, session.accessToken);
+  const { albums } = await searchSpotifyAlbums(query);
   return albums.items.map((album) => ({
     spotifyAlbumId: album.id,
     spotifyArtistId: album.artists[0]?.id ?? "",
