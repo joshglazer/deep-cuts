@@ -38,6 +38,14 @@ export function searchAlbums(query: string, accessToken: string) {
   );
 }
 
+/** Spotify allows up to 50 ids per call to GET /artists. */
+export function getArtists(ids: string[], accessToken: string) {
+  return spotifyFetch<{ artists: SpotifyArtist[] }>(
+    `/artists?ids=${ids.map(encodeURIComponent).join(",")}`,
+    accessToken
+  );
+}
+
 export interface RecentlyPlayedItem {
   track: {
     id: string;
