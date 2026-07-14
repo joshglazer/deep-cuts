@@ -24,6 +24,8 @@ export function Footer() {
           href="https://github.com/joshglazer/deep-cuts"
           target="_blank"
           isStandalone
+          type="supporting"
+          size="sm"
           hasUnderline={false}
           color="secondary"
         >
