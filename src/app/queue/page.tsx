@@ -2,17 +2,15 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
-import { Header } from "@/components/Header";
-import { AlbumSearch } from "./AlbumSearch";
+import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "./actions";
 import { ViewToggle } from "./ViewToggle";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
-import { Heading } from "@/design/atoms/Heading";
-import { Text } from "@/design/atoms/Text";
 import { VStack } from "@/design/atoms/Stack";
+import { Text } from "@/design/atoms/Text";
 
 export default async function QueuePage({
   searchParams,
@@ -29,7 +27,7 @@ export default async function QueuePage({
 
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
-  // queuing artists (album search/queue already lives in AlbumSearch.tsx).
+  // queuing artists (album search/queue already lives at /queue/search).
   const [{ data: artists }, { data: albums }] = await Promise.all([
     dataClient.models.Artist.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
@@ -94,65 +92,57 @@ export default async function QueuePage({
   }
 
   return (
-    <div>
-      <Header />
-      <div className="mx-auto max-w-2xl px-6 py-16">
-        <Heading level={1} className="mb-8">
-          Your queue
-        </Heading>
+    <PageShell
+      title="My Queue"
+      actions={albums.length > 0 && <ViewToggle view={view} />}
+    >
+      {isEmpty ? (
+        <EmptyState
+          title="Nothing queued yet"
+          description="Search and add an artist or album to get started."
+        />
+      ) : (
+        <VStack gap="md">
+          {artists.map((artist) => (
+            <Text key={artist.id}>{artist.name} (artist)</Text>
+          ))}
 
-        <AlbumSearch />
-
-        {isEmpty ? (
-          <EmptyState
-            title="Nothing queued yet"
-            description="Search and add an artist or album to get started."
-          />
-        ) : (
-          <VStack gap="md">
-            {artists.map((artist) => (
-              <Text key={artist.id}>{artist.name} (artist)</Text>
-            ))}
-
-            {albums.length > 0 && <ViewToggle view={view} />}
-
-            {view === "artist" ? (
-              <VStack gap="sm">
-                {artistGroups.map((artist) => (
-                  <ArtistRow
-                    key={artist.spotifyArtistId}
-                    name={artist.name}
-                    imageUrl={artist.imageUrl}
-                    albumCount={artist.albumCount}
-                    href={`/queue/artist/${artist.spotifyArtistId}`}
-                  />
-                ))}
-              </VStack>
-            ) : (
-              <VStack gap="sm">
-                {sortedAlbums.map((album) => (
-                  <AlbumRow
-                    key={album.id}
-                    name={album.name}
-                    artistName={album.artistName}
-                    imageUrl={album.imageUrl}
-                    endContent={
-                      <form action={removeAlbum.bind(null, album.id)}>
-                        <Button
-                          type="submit"
-                          variant="ghost"
-                          size="sm"
-                          label="Remove"
-                        />
-                      </form>
-                    }
-                  />
-                ))}
-              </VStack>
-            )}
-          </VStack>
-        )}
-      </div>
-    </div>
+          {view === "artist" ? (
+            <VStack gap="sm">
+              {artistGroups.map((artist) => (
+                <ArtistRow
+                  key={artist.spotifyArtistId}
+                  name={artist.name}
+                  imageUrl={artist.imageUrl}
+                  albumCount={artist.albumCount}
+                  href={`/queue/artist/${artist.spotifyArtistId}`}
+                />
+              ))}
+            </VStack>
+          ) : (
+            <VStack gap="sm">
+              {sortedAlbums.map((album) => (
+                <AlbumRow
+                  key={album.id}
+                  name={album.name}
+                  artistName={album.artistName}
+                  imageUrl={album.imageUrl}
+                  endContent={
+                    <form action={removeAlbum.bind(null, album.id)}>
+                      <Button
+                        type="submit"
+                        variant="ghost"
+                        size="sm"
+                        label="Remove"
+                      />
+                    </form>
+                  }
+                />
+              ))}
+            </VStack>
+          )}
+        </VStack>
+      )}
+    </PageShell>
   );
 }
