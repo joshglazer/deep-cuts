@@ -8,7 +8,12 @@ export function Footer() {
     <footer className="flex items-center justify-between border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
       <Text type="supporting" size="sm">
         A{" "}
-        <Link href="https://joshglazer.com" target="_blank" color="inherit">
+        <Link
+          href="https://joshglazer.com"
+          target="_blank"
+          type="inherit"
+          color="inherit"
+        >
           Josh Glazer
         </Link>{" "}
         project
