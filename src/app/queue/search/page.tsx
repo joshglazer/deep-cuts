@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { Header } from "@/components/Header";
+import { PageShell } from "@/components/PageShell";
 import { AlbumSearch } from "../AlbumSearch";
-import { Heading } from "@/design/atoms/Heading";
 
 export default async function QueueSearchPage() {
   const session = await auth();
@@ -11,15 +10,8 @@ export default async function QueueSearchPage() {
   }
 
   return (
-    <div>
-      <Header />
-      <div className="mx-auto max-w-2xl px-6 py-16">
-        <Heading level={1} className="mb-8">
-          Add to Queue
-        </Heading>
-
-        <AlbumSearch />
-      </div>
-    </div>
+    <PageShell title="Add to Queue">
+      <AlbumSearch />
+    </PageShell>
   );
 }
