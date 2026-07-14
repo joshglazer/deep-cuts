@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { HStack, StackItem } from "../atoms/Stack";
+import { HStack, StackItem, VStack } from "../atoms/Stack";
 import { Link } from "../atoms/Link";
 import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
@@ -21,16 +21,18 @@ export function AlbumRow({
     <HStack gap="sm" vAlign="center">
       <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
       <StackItem size="fill">
-        <Text maxLines={1}>
+        <VStack gap="sm">
           {href ? (
-            <Link href={href} color="primary">
+            <Link href={href} isStandalone color="primary">
               {name}
             </Link>
           ) : (
-            name
-          )}{" "}
-          — {artistName}
-        </Text>
+            <Text maxLines={1}>{name}</Text>
+          )}
+          <Text type="supporting" maxLines={1}>
+            {artistName}
+          </Text>
+        </VStack>
       </StackItem>
       {endContent}
     </HStack>
