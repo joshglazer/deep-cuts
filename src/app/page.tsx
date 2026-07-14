@@ -13,7 +13,7 @@ export default async function Home() {
   }
 
   return (
-    <VStack gap="lg" hAlign="center" vAlign="center" height="100vh">
+    <VStack gap="lg" hAlign="center" vAlign="center" height="100%">
       <Heading level={1}>Deep Cuts</Heading>
       <Text type="supporting" justify="center" className="max-w-md">
         Queue up artists and albums, then see when you actually got around to

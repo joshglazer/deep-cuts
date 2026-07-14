@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DesignProvider } from "@/design/DesignProvider";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const description =
@@ -37,7 +38,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <DesignProvider>{children}</DesignProvider>
+        <DesignProvider>
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </DesignProvider>
       </body>
     </html>
   );
