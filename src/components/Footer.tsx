@@ -19,7 +19,7 @@ export function Footer() {
         project
       </Text>
       <HStack gap="sm" vAlign="center">
-        <SiGithub className="h-4 w-4 shrink-0 fill-current text-zinc-500 dark:text-zinc-400" />
+        <SiGithub className="h-3 w-3 shrink-0 fill-current text-zinc-500 dark:text-zinc-400" />
         <Link
           href="https://github.com/joshglazer/deep-cuts"
           target="_blank"
