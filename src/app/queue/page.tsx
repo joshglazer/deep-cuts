@@ -3,7 +3,6 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { Header } from "@/components/Header";
-import { AlbumSearch } from "./AlbumSearch";
 import { removeAlbum } from "./actions";
 import { ViewToggle } from "./ViewToggle";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
@@ -11,8 +10,8 @@ import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { Heading } from "@/design/atoms/Heading";
+import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
-import { VStack } from "@/design/atoms/Stack";
 
 export default async function QueuePage({
   searchParams,
@@ -29,7 +28,7 @@ export default async function QueuePage({
 
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
-  // queuing artists (album search/queue already lives in AlbumSearch.tsx).
+  // queuing artists (album search/queue already lives at /queue/search).
   const [{ data: artists }, { data: albums }] = await Promise.all([
     dataClient.models.Artist.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
@@ -99,11 +98,10 @@ export default async function QueuePage({
     <div>
       <Header />
       <div className="mx-auto max-w-2xl px-6 py-16">
-        <Heading level={1} className="mb-8">
-          Your queue
-        </Heading>
-
-        <AlbumSearch />
+        <HStack gap="md" vAlign="center" justify="between" className="mb-8">
+          <Heading level={1}>My Queue</Heading>
+          {albums.length > 0 && <ViewToggle view={view} />}
+        </HStack>
 
         {isEmpty ? (
           <EmptyState
@@ -115,8 +113,6 @@ export default async function QueuePage({
             {artists.map((artist) => (
               <Text key={artist.id}>{artist.name} (artist)</Text>
             ))}
-
-            {albums.length > 0 && <ViewToggle view={view} />}
 
             {view === "artist" ? (
               <VStack gap="sm">

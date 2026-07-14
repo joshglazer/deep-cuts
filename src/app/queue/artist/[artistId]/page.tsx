@@ -7,7 +7,7 @@ import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { Heading } from "@/design/atoms/Heading";
-import { Link } from "@/design/atoms/Link";
+import { PageBreadcrumbs } from "@/design/molecules/PageBreadcrumbs";
 import { VStack } from "@/design/atoms/Stack";
 
 export default async function ArtistQueuePage({
@@ -35,9 +35,15 @@ export default async function ArtistQueuePage({
     <div>
       <Header />
       <div className="mx-auto max-w-2xl px-6 py-16">
-        <Link href="/queue">Back to queue</Link>
+        <PageBreadcrumbs
+          items={[
+            { label: "My Queue", href: "/queue" },
+            { label: artistName },
+          ]}
+          className="mb-4"
+        />
 
-        <Heading level={1} className="mb-8 mt-4">
+        <Heading level={1} className="mb-8">
           {artistName}
         </Heading>
 

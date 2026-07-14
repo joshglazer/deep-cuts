@@ -2,6 +2,16 @@
 
 Project-specific guidance for AI coding agents.
 
+## Local dev server: always use 127.0.0.1, never localhost
+
+Spotify's OAuth no longer allows `localhost` as a redirect URI hostname, and
+the app's session cookie is scoped to whichever host you loaded the page
+from — so browsing to `localhost:3000` after signing in on `127.0.0.1:3000`
+(or vice versa) silently loses the session and bounces you back to the
+sign-in page. Always address the dev server as `http://127.0.0.1:3000`, not
+`http://localhost:3000` — in curl commands, browser preview/navigate tools,
+and any `AUTH_URL`/redirect URI references.
+
 <!-- ASTRYX:START -->
 Astryx v0.1.4 · 149 components
 CLI: run every command as `npx astryx <cmd>` (shown below as `astryx ...`).
