@@ -100,6 +100,22 @@ export function searchAlbums(query: string) {
   );
 }
 
+export interface SpotifyTrack {
+  id: string;
+  name: string;
+  track_number: number;
+  duration_ms: number;
+  artists: SpotifyArtist[];
+}
+
+export interface SpotifyAlbumDetails extends SpotifyAlbum {
+  tracks: { items: SpotifyTrack[] };
+}
+
+export function getAlbum(id: string) {
+  return spotifyAppFetch<SpotifyAlbumDetails>(`/albums/${encodeURIComponent(id)}`);
+}
+
 /** Spotify allows up to 50 ids per call to GET /artists. */
 export function getArtists(ids: string[]) {
   return spotifyAppFetch<{ artists: SpotifyArtist[] }>(

@@ -47,6 +47,7 @@ export default async function ArtistQueuePage({
               name={album.name}
               artistName={album.artistName}
               imageUrl={album.imageUrl}
+              href={`/queue/album/${album.spotifyAlbumId}`}
               endContent={
                 <form action={removeAlbum.bind(null, album.id)}>
                   <Button
