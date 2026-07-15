@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "$amplify/env/*": ["./.amplify/generated/env/*"]
     }
   },
   "include": [

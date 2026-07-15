@@ -98,6 +98,55 @@ export function search(query: string) {
   }>(`/search?type=artist,album&q=${encodeURIComponent(query)}`);
 }
 
+export interface RefreshedToken {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+/**
+ * Shared by src/auth.ts (refreshing the signed-in user's session token) and
+ * the poll-spotify scheduled function (refreshing on behalf of users with no
+ * active session). Spotify sometimes omits `refresh_token` in the response —
+ * that means keep using the one you already have, so callers should fall
+ * back to the input token rather than treating it as required.
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<RefreshedToken> {
+  const clientId = process.env.AUTH_SPOTIFY_ID;
+  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error(
+      "Missing AUTH_SPOTIFY_ID/AUTH_SPOTIFY_SECRET for Spotify token refresh"
+    );
+  }
+
+  const res = await fetch(SPOTIFY_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }).toString(),
+  });
+  if (!res.ok) {
+    throw new Error(`Spotify token refresh error ${res.status}: ${await res.text()}`);
+  }
+
+  const data = (await res.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+  };
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token ?? refreshToken,
+    expiresAt: Math.floor(Date.now() / 1000) + data.expires_in,
+  };
+}
+
 export interface SpotifyTrack {
   id: string;
   name: string;

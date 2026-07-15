@@ -16,10 +16,14 @@ actually got around to them.
   a typed client, and handles the AppSync/DynamoDB wiring for you. See the
   model definitions there for `Artist`, `Album`, and `ListenEvent`.
 - **Listen tracking**: `amplify/functions/poll-spotify` is a scheduled
-  Lambda (every 15 min) that will poll each connected user's Spotify
-  "recently played" endpoint and record matches against their queue as
-  `ListenEvent`s. Spotify has no push/webhook API for this, so polling is
-  the only option. Currently a stub — see the TODO in its `handler.ts`.
+  Lambda (every 15 min) that refreshes each connected user's Spotify access
+  token (the refresh token is persisted to the `SpotifyAuth` model on
+  sign-in/refresh — see `src/auth.ts` — since the function runs with no user
+  session of its own), polls their "recently played" history, and records
+  matches against their queue as `ListenEvent`s. Spotify has no push/webhook
+  API for this, so polling is the only option. The queue pages read those
+  `ListenEvent`s back to show a per-album progress bar ("x/y tracks") and
+  per-track played checkmarks on the album's track list.
 
 Why these choices: see the cost/architecture discussion earlier in this
 project's history. Short version — Amplify Hosting + DynamoDB is pay-per-use
@@ -72,6 +76,30 @@ Note: `npx ampx sandbox` deploys real (if tiny) AWS resources to your
 account under a per-developer sandbox stack. It's part of the normal Gen 2
 workflow, not accidental — just know it's happening.
 
+### Listen-tracking secrets (poll-spotify)
+
+The `poll-spotify` scheduled function (see Architecture above) refreshes
+each connected user's Spotify access token on their behalf, using Spotify's
+OAuth token endpoint directly — since Amplify functions don't inherit the
+Next app's env vars, it needs its own copies of
+`AUTH_SPOTIFY_ID`/`AUTH_SPOTIFY_SECRET` as sandbox secrets:
+
+```bash
+npm run sandbox:secrets   # reads AUTH_SPOTIFY_ID/AUTH_SPOTIFY_SECRET from
+                           # .env.local and pushes them to `ampx sandbox
+                           # secret set` for your sandbox
+```
+
+Run this once, any time after your first `npm run sandbox` deploy — sandbox
+secrets are stored in AWS (SSM Parameter Store), scoped to your sandbox
+*identity* (your OS username, by default), not to any one worktree or
+`ampx sandbox` process. That means it doesn't need repeating per worktree or
+per sandbox restart; only re-run it if you rotate your Spotify app's client
+secret. Without it, `poll-spotify` will fail to refresh tokens and log an
+error each time it runs, rather than recording any listens. The deployed
+branch (Amplify Hosting) needs the same two variables configured separately
+— see "Deploying" below.
+
 ## Deploying
 
 1. Push this repo to GitHub (or another Amplify-supported git provider).
@@ -92,7 +120,19 @@ workflow, not accidental — just know it's happening.
    middleware) — `amplify.yml` explicitly writes them into `.env.production`
    during the build to bridge that gap. If you add more server-only env
    vars later, add them to that same `env | grep -e ...` line too.
-4. Add the deployed domain's callback URL
+4. Separately, set `AUTH_SPOTIFY_ID`/`AUTH_SPOTIFY_SECRET` as **Amplify
+   backend secrets** (not the "Environment variables" from step 3 — a
+   different mechanism, backing `secret()` in
+   `amplify/functions/poll-spotify/resource.ts`, resolved from SSM at
+   Lambda runtime). In the Amplify console, this is under the app's
+   **Secrets** management page, scoped to the branch. There's no CLI
+   equivalent for a Git-connected deploy (`ampx secret set` only exists
+   under `ampx sandbox`) — `amplify.yml`'s `npx ampx pipeline-deploy` step
+   already deploys the schedule (EventBridge → poll-spotify, every 15 min)
+   automatically on every push, but without these secrets set, every
+   invocation will fail to refresh any user's token and log an error
+   per user rather than recording any listens.
+5. Add the deployed domain's callback URL
    (`https://<your-domain>/api/auth/callback/spotify`) to your Spotify app's
    redirect URIs.
 
@@ -128,13 +168,20 @@ poll-spotify function) — and tear it down when the PR closes.
    Spotify-backed features (album search) stay non-functional under it —
    use the real Spotify sign-in (step 4) when you need those.
 
-## What's scaffolded vs. what's left
+## Status
 
-Scaffolded: project structure, Spotify OAuth sign-in, the DynamoDB data
-model, and the shape of the polling job (including its IAM wiring).
+Built: Spotify OAuth sign-in, the DynamoDB data model, searching Spotify and
+queuing albums (including browsing an artist's full discography), the queue
+list (flat and grouped-by-artist views, with per-album listen-progress
+indicators), the per-track played view on an album's track list, and the
+poll-spotify handler itself (refresh-token persistence, matching
+recently-played tracks against the queue, writing `ListenEvent`s).
 
-Left to build: the actual queue UI (search Spotify, add to queue), the
-poll-spotify handler's logic (refresh tokens, call
-`/me/player/recently-played`, match against the queue, write
-`ListenEvent`s), and persisting refresh tokens somewhere the scheduled
-function can read them (it runs with no user session).
+Left to build: queuing an *artist* directly (the `Artist` model and
+`/queue/artist/[artistId]` view exist, but nothing writes an `Artist` record
+today — only individual albums get queued, including ones found via an
+artist's discography page).
+
+Listen tracking won't record anything in a given environment until its two
+Spotify secrets are set — see "Listen-tracking secrets (poll-spotify)" above
+for local sandboxes, and "Deploying" below for hosted branches.

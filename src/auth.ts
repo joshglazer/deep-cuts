@@ -1,6 +1,8 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Spotify from "next-auth/providers/spotify";
 import Credentials from "next-auth/providers/credentials";
+import { refreshAccessToken } from "@/lib/spotify";
+import { dataClient } from "@/lib/amplify-server";
 
 // Scopes needed to read what's currently/recently playing (for the polling
 // job) and to look up the user's profile id (used as the partition key for
@@ -45,6 +47,24 @@ if (previewLoginEnabled) {
   );
 }
 
+// Upserts the user's current refresh token so the poll-spotify scheduled
+// function (which has no user session of its own) can pick it up. Failures
+// are logged rather than thrown — a write hiccup here shouldn't block sign-in
+// or session refresh.
+async function persistRefreshToken(spotifyUserId: string, refreshToken: string) {
+  try {
+    const { data: existing } = await dataClient.models.SpotifyAuth.get({ spotifyUserId });
+    const updatedAt = new Date().toISOString();
+    if (existing) {
+      await dataClient.models.SpotifyAuth.update({ spotifyUserId, refreshToken, updatedAt });
+    } else {
+      await dataClient.models.SpotifyAuth.create({ spotifyUserId, refreshToken, updatedAt });
+    }
+  } catch (error) {
+    console.error("Failed to persist Spotify refresh token", error);
+  }
+}
+
 // Exported (not just passed to NextAuth below) so the route handler can call
 // Auth() directly with a corrected request — see the comment in
 // src/app/api/auth/[...nextauth]/route.ts for why that's necessary.
@@ -56,10 +76,6 @@ export const authConfig: NextAuthConfig = {
   trustHost: true,
   providers,
   callbacks: {
-    // TODO (backend build-out): access tokens expire after 1hr — refresh
-    // using token.refreshToken when token.expiresAt has passed, and persist
-    // the (encrypted) refresh token somewhere the poll-spotify function can
-    // read it, since that function runs on a schedule with no user session.
     async jwt({ token, account, user }) {
       if (account) {
         token.accessToken = account.access_token;
@@ -75,6 +91,35 @@ export const authConfig: NextAuthConfig = {
         token.email = user.email;
         token.picture = user.image;
       }
+
+      // The preview-login credentials path has no real Spotify tokens (see
+      // providers above) — nothing to refresh or persist there.
+      const refreshToken = token.refreshToken as string | undefined;
+      const spotifyUserId = token.spotifyUserId as string | undefined;
+      if (!refreshToken || !spotifyUserId) {
+        return token;
+      }
+
+      const expiresAt = token.expiresAt as number | undefined;
+      const isExpired = expiresAt === undefined || Date.now() / 1000 >= expiresAt;
+      if (isExpired) {
+        try {
+          const refreshed = await refreshAccessToken(refreshToken);
+          token.accessToken = refreshed.accessToken;
+          token.refreshToken = refreshed.refreshToken;
+          token.expiresAt = refreshed.expiresAt;
+        } catch (error) {
+          console.error("Failed to refresh Spotify access token", error);
+          return token;
+        }
+      }
+
+      // Persist on initial sign-in and whenever we just refreshed, so the
+      // stored token stays current (Spotify rotates it sometimes).
+      if (account || isExpired) {
+        await persistRefreshToken(spotifyUserId, token.refreshToken as string);
+      }
+
       return token;
     },
     async session({ session, token }) {

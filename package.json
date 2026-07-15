@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "design:theme": "astryx theme build src/design/theme/spotifyTheme.ts -o src/design/theme/spotify-theme.css",
-    "sandbox": "ampx sandbox --profile deep-cuts"
+    "sandbox": "ampx sandbox --profile deep-cuts",
+    "sandbox:secrets": "bash scripts/set-sandbox-secrets.sh"
   },
   "dependencies": {
     "@astryxdesign/core": "^0.1.4",
