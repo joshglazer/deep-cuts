@@ -23,7 +23,7 @@ export function AlbumRow({
   endContent?: ReactNode;
 }) {
   return (
-    <HStack gap="sm" vAlign="center">
+    <HStack gap="sm" vAlign="center" className="bg-surface rounded-lg p-2">
       <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
       <StackItem size="fill">
         <VStack gap="sm">
