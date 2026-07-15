@@ -1,16 +1,25 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import { searchAlbums, queueAlbum, type AlbumSearchResult } from "./actions";
+import {
+  search,
+  queueAlbum,
+  type AlbumSearchResult,
+  type ArtistSearchResult,
+} from "./actions";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
+import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Banner } from "@/design/atoms/Banner";
 import { Button } from "@/design/atoms/Button";
-import { HStack, VStack } from "@/design/atoms/Stack";
+import { SegmentedControl } from "@/design/atoms/SegmentedControl";
+import { HStack, StackItem, VStack } from "@/design/atoms/Stack";
 import { TextInput } from "@/design/atoms/TextInput";
 
 export function AlbumSearch() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<AlbumSearchResult[]>([]);
+  const [artists, setArtists] = useState<ArtistSearchResult[]>([]);
+  const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
+  const [view, setView] = useState<"artist" | "album">("album");
   const [queuedIds, setQueuedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
@@ -21,7 +30,9 @@ export function AlbumSearch() {
     setError(null);
     startSearch(async () => {
       try {
-        setResults(await searchAlbums(query));
+        const result = await search(query);
+        setArtists(result.artists);
+        setAlbums(result.albums);
       } catch {
         setError("Couldn't search Spotify. Try again.");
       }
@@ -41,25 +52,43 @@ export function AlbumSearch() {
 
   return (
     <VStack gap="md" className="mb-10">
-      <form onSubmit={handleSearch}>
-        <HStack gap="sm" vAlign="end">
-          <TextInput
-            label="Search for an album"
-            isLabelHidden
-            startIcon="search"
-            hasClear
-            placeholder="Search for an album…"
-            value={query}
-            onChange={setQuery}
+      <HStack gap="sm" vAlign="end">
+        <StackItem size="fill">
+          <form onSubmit={handleSearch}>
+            <HStack gap="sm" vAlign="end">
+              <StackItem size="fill">
+                <TextInput
+                  label="Search for an artist or album"
+                  isLabelHidden
+                  startIcon="search"
+                  hasClear
+                  placeholder="Search for an artist or album…"
+                  value={query}
+                  onChange={setQuery}
+                />
+              </StackItem>
+              <Button
+                type="submit"
+                label="Search"
+                isLoading={isSearching}
+                isDisabled={!query.trim()}
+              />
+            </HStack>
+          </form>
+        </StackItem>
+
+        {(artists.length > 0 || albums.length > 0) && (
+          <SegmentedControl
+            value={view}
+            onChange={(value) => setView(value as "artist" | "album")}
+            label="Search results view"
+            options={[
+              { value: "album", label: "Albums" },
+              { value: "artist", label: "Artists" },
+            ]}
           />
-          <Button
-            type="submit"
-            label="Search"
-            isLoading={isSearching}
-            isDisabled={!query.trim()}
-          />
-        </HStack>
-      </form>
+        )}
+      </HStack>
 
       {error && (
         <Banner
@@ -70,9 +99,22 @@ export function AlbumSearch() {
         />
       )}
 
-      {results.length > 0 && (
+      {view === "artist" && artists.length > 0 && (
         <VStack gap="sm">
-          {results.map((album) => {
+          {artists.map((artist) => (
+            <ArtistRow
+              key={artist.spotifyArtistId}
+              name={artist.name}
+              imageUrl={artist.imageUrl}
+              href={`/queue/search/artist/${artist.spotifyArtistId}`}
+            />
+          ))}
+        </VStack>
+      )}
+
+      {view === "album" && albums.length > 0 && (
+        <VStack gap="sm">
+          {albums.map((album) => {
             const queued = queuedIds.has(album.spotifyAlbumId);
             return (
               <AlbumRow
@@ -80,6 +122,7 @@ export function AlbumSearch() {
                 name={album.name}
                 artistName={album.artistName}
                 imageUrl={album.imageUrl}
+                releaseYear={album.releaseYear}
                 endContent={
                   <Button
                     label={queued ? "Queued" : "Queue"}
