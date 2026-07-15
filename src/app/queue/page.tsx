@@ -4,6 +4,7 @@ import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "./actions";
+import { getPlayedTrackIdsByAlbum } from "./listenProgress";
 import { ViewToggle } from "./ViewToggle";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
@@ -28,13 +29,14 @@ export default async function QueuePage({
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
   // queuing artists (album search/queue already lives at /queue/search).
-  const [{ data: artists }, { data: albums }] = await Promise.all([
+  const [{ data: artists }, { data: albums }, playedTrackIdsByAlbum] = await Promise.all([
     dataClient.models.Artist.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
     }),
     dataClient.models.Album.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
     }),
+    getPlayedTrackIdsByAlbum(session.spotifyUserId),
   ]);
 
   const isEmpty = artists.length === 0 && albums.length === 0;
@@ -128,6 +130,14 @@ export default async function QueuePage({
                   artistName={album.artistName}
                   imageUrl={album.imageUrl}
                   href={`/queue/album/${album.spotifyAlbumId}`}
+                  progress={
+                    album.totalTracks != null
+                      ? {
+                          played: playedTrackIdsByAlbum.get(album.spotifyAlbumId)?.size ?? 0,
+                          total: album.totalTracks,
+                        }
+                      : undefined
+                  }
                   endContent={
                     <form action={removeAlbum.bind(null, album.id)}>
                       <Button

@@ -1,9 +1,12 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getAlbum } from "@/lib/spotify";
+import { getPlayedTrackIds } from "@/app/queue/listenProgress";
 import { PageShell } from "@/components/PageShell";
 import { EmptyState } from "@/design/atoms/EmptyState";
+import { Icon } from "@/design/atoms/Icon";
 import { List, ListItem } from "@/design/atoms/List";
+import { HStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
 function formatDuration(durationMs: number) {
@@ -25,12 +28,10 @@ export default async function AlbumTracksPage({
 
   const { albumId } = await params;
 
-  let album;
-  try {
-    album = await getAlbum(albumId);
-  } catch {
-    album = null;
-  }
+  const [album, playedTrackIds] = await Promise.all([
+    getAlbum(albumId).catch(() => null),
+    getPlayedTrackIds(session.spotifyUserId, albumId),
+  ]);
 
   const artistName = album?.artists.map((artist) => artist.name).join(", ");
   const title = album ? `${album.name} — ${artistName}` : "Album";
@@ -55,7 +56,12 @@ export default async function AlbumTracksPage({
               key={track.id}
               label={`${track.track_number}. ${track.name}`}
               endContent={
-                <Text color="secondary">{formatDuration(track.duration_ms)}</Text>
+                <HStack gap="sm" vAlign="center">
+                  {playedTrackIds.has(track.id) && (
+                    <Icon icon="check" color="success" size="sm" />
+                  )}
+                  <Text color="secondary">{formatDuration(track.duration_ms)}</Text>
+                </HStack>
               }
             />
           ))}

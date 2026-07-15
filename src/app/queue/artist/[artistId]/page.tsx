@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "@/app/queue/actions";
+import { getPlayedTrackIdsByAlbum } from "@/app/queue/listenProgress";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
@@ -20,12 +21,15 @@ export default async function ArtistQueuePage({
 
   const { artistId } = await params;
 
-  const { data: albums } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: session.spotifyUserId },
-      spotifyArtistId: { eq: artistId },
-    },
-  });
+  const [{ data: albums }, playedTrackIdsByAlbum] = await Promise.all([
+    dataClient.models.Album.list({
+      filter: {
+        spotifyUserId: { eq: session.spotifyUserId },
+        spotifyArtistId: { eq: artistId },
+      },
+    }),
+    getPlayedTrackIdsByAlbum(session.spotifyUserId),
+  ]);
 
   const artistName = albums[0]?.artistName ?? "Artist";
 
@@ -48,6 +52,14 @@ export default async function ArtistQueuePage({
               artistName={album.artistName}
               imageUrl={album.imageUrl}
               href={`/queue/album/${album.spotifyAlbumId}`}
+              progress={
+                album.totalTracks != null
+                  ? {
+                      played: playedTrackIdsByAlbum.get(album.spotifyAlbumId)?.size ?? 0,
+                      total: album.totalTracks,
+                    }
+                  : undefined
+              }
               endContent={
                 <form action={removeAlbum.bind(null, album.id)}>
                   <Button
