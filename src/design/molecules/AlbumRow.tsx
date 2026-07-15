@@ -10,6 +10,7 @@ export function AlbumRow({
   artistName,
   imageUrl,
   releaseYear,
+  totalTracks,
   href,
   progress,
   endContent,
@@ -18,6 +19,7 @@ export function AlbumRow({
   artistName: string;
   imageUrl?: string | null;
   releaseYear?: string;
+  totalTracks?: number;
   href?: string;
   progress?: { played: number; total: number };
   endContent?: ReactNode;
@@ -39,7 +41,16 @@ export function AlbumRow({
           </Text>
         </VStack>
       </StackItem>
-      {releaseYear && <Text type="supporting">{releaseYear}</Text>}
+      {(releaseYear || (totalTracks !== undefined && !progress)) && (
+        <VStack gap="sm" hAlign="end">
+          {releaseYear && <Text type="supporting">{releaseYear}</Text>}
+          {totalTracks !== undefined && !progress && (
+            <Text type="supporting" maxLines={1}>
+              {totalTracks} tracks
+            </Text>
+          )}
+        </VStack>
+      )}
       {progress && (
         <VStack gap="sm" className="w-28">
           <ProgressBar

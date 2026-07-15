@@ -54,6 +54,7 @@ export function ArtistDiscography({ albums }: { albums: AlbumSearchResult[] }) {
               artistName={album.artistName}
               imageUrl={album.imageUrl}
               releaseYear={album.releaseYear}
+              totalTracks={album.totalTracks}
               endContent={
                 <Button
                   label={queued ? "Queued" : "Queue"}
