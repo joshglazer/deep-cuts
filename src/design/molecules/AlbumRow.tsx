@@ -9,6 +9,7 @@ export function AlbumRow({
   name,
   artistName,
   imageUrl,
+  releaseYear,
   href,
   progress,
   endContent,
@@ -16,6 +17,7 @@ export function AlbumRow({
   name: string;
   artistName: string;
   imageUrl?: string | null;
+  releaseYear?: string;
   href?: string;
   progress?: { played: number; total: number };
   endContent?: ReactNode;
@@ -37,6 +39,7 @@ export function AlbumRow({
           </Text>
         </VStack>
       </StackItem>
+      {releaseYear && <Text type="supporting">{releaseYear}</Text>}
       {progress && (
         <VStack gap="sm" className="w-28">
           <ProgressBar

@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
-import { getAlbum, searchAlbums as searchSpotifyAlbums } from "@/lib/spotify";
+import {
+  getAlbum,
+  search as searchSpotify,
+  getArtists,
+  getArtistAlbums,
+  type SpotifyAlbum,
+} from "@/lib/spotify";
 
 export interface AlbumSearchResult {
   spotifyAlbumId: string;
@@ -11,25 +17,83 @@ export interface AlbumSearchResult {
   name: string;
   artistName: string;
   imageUrl?: string;
+  releaseYear?: string;
 }
 
-export async function searchAlbums(
-  query: string
-): Promise<AlbumSearchResult[]> {
-  const session = await auth();
-  if (!session?.user) {
-    throw new Error("Not signed in");
-  }
-  if (!query.trim()) return [];
+export interface ArtistSearchResult {
+  spotifyArtistId: string;
+  name: string;
+  imageUrl?: string;
+}
 
-  const { albums } = await searchSpotifyAlbums(query);
-  return albums.items.map((album) => ({
+function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
+  return {
     spotifyAlbumId: album.id,
     spotifyArtistId: album.artists[0]?.id ?? "",
     name: album.name,
     artistName: album.artists.map((artist) => artist.name).join(", "),
     imageUrl: album.images[0]?.url,
-  }));
+    releaseYear: album.release_date?.slice(0, 4),
+  };
+}
+
+export async function search(query: string): Promise<{
+  artists: ArtistSearchResult[];
+  albums: AlbumSearchResult[];
+}> {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not signed in");
+  }
+  if (!query.trim()) return { artists: [], albums: [] };
+
+  const { artists, albums } = await searchSpotify(query);
+  return {
+    artists: artists.items.map((artist) => ({
+      spotifyArtistId: artist.id,
+      name: artist.name,
+      imageUrl: artist.images[0]?.url,
+    })),
+    albums: albums.items.map(toAlbumSearchResult),
+  };
+}
+
+export async function getArtistDiscography(artistId: string): Promise<{
+  artistName: string;
+  imageUrl?: string;
+  albums: AlbumSearchResult[];
+}> {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not signed in");
+  }
+
+  const [{ artists }, spotifyAlbums] = await Promise.all([
+    getArtists([artistId]),
+    getArtistAlbums(artistId),
+  ]);
+  const artist = artists[0];
+
+  // Spotify's artist-albums endpoint returns a separate entry per market
+  // re-release, so dedupe by name, keeping the earliest release of each.
+  const byName = new Map<string, SpotifyAlbum>();
+  for (const album of spotifyAlbums) {
+    const key = album.name.trim().toLowerCase();
+    const existing = byName.get(key);
+    if (!existing || album.release_date < existing.release_date) {
+      byName.set(key, album);
+    }
+  }
+
+  const albums = Array.from(byName.values())
+    .sort((a, b) => a.release_date.localeCompare(b.release_date))
+    .map(toAlbumSearchResult);
+
+  return {
+    artistName: artist?.name ?? "Artist",
+    imageUrl: artist?.images[0]?.url,
+    albums,
+  };
 }
 
 export async function queueAlbum(album: AlbumSearchResult) {

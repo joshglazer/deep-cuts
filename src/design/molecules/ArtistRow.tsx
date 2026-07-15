@@ -11,7 +11,7 @@ export function ArtistRow({
 }: {
   name: string;
   imageUrl?: string | null;
-  albumCount: number;
+  albumCount?: number;
   href: string;
 }) {
   return (
@@ -22,9 +22,11 @@ export function ArtistRow({
           {name}
         </Link>
       </StackItem>
-      <Text type="supporting">
-        {albumCount} {albumCount === 1 ? "album" : "albums"}
-      </Text>
+      {albumCount !== undefined && (
+        <Text type="supporting">
+          {albumCount} {albumCount === 1 ? "album" : "albums"}
+        </Text>
+      )}
     </HStack>
   );
 }
