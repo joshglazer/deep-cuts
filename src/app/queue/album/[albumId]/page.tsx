@@ -3,10 +3,12 @@ import { auth } from "@/auth";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackIds } from "@/app/queue/listenProgress";
 import { PageShell } from "@/components/PageShell";
+import { AspectRatio } from "@/design/atoms/AspectRatio";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { Icon } from "@/design/atoms/Icon";
+import { Link } from "@/design/atoms/Link";
 import { List, ListItem } from "@/design/atoms/List";
-import { HStack } from "@/design/atoms/Stack";
+import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
 function formatDuration(durationMs: number) {
@@ -34,13 +36,22 @@ export default async function AlbumTracksPage({
   ]);
 
   const artistName = album?.artists.map((artist) => artist.name).join(", ");
-  const title = album ? `${album.name} — ${artistName}` : "Album";
+  const primaryArtist = album?.artists[0];
+  const releaseYear = album?.release_date?.slice(0, 4);
 
   return (
     <PageShell
-      title={title}
+      title={album?.name ?? "Album"}
       breadcrumbs={[
         { label: "My Queue", href: "/queue" },
+        ...(primaryArtist
+          ? [
+              {
+                label: primaryArtist.name,
+                href: `/queue/artist/${primaryArtist.id}`,
+              },
+            ]
+          : []),
         { label: album?.name ?? "Album" },
       ]}
     >
@@ -50,22 +61,54 @@ export default async function AlbumTracksPage({
           description="Something went wrong fetching tracks from Spotify. Try again later."
         />
       ) : (
-        <List hasDividers>
-          {album.tracks.items.map((track) => (
-            <ListItem
-              key={track.id}
-              label={`${track.track_number}. ${track.name}`}
-              endContent={
-                <HStack gap="sm" vAlign="center">
-                  {playedTrackIds.has(track.id) && (
-                    <Icon icon="check" color="success" size="sm" />
-                  )}
-                  <Text color="secondary">{formatDuration(track.duration_ms)}</Text>
-                </HStack>
-              }
-            />
-          ))}
-        </List>
+        <VStack gap="lg">
+          <HStack gap="lg">
+            <div className="w-40 shrink-0">
+              <AspectRatio ratio={1}>
+                {album.images[0] && (
+                  <img
+                    src={album.images[0].url}
+                    alt=""
+                    className="h-full w-full rounded-lg object-cover"
+                  />
+                )}
+              </AspectRatio>
+            </div>
+            <VStack gap="sm" justify="center">
+              {primaryArtist ? (
+                <Link
+                  href={`/queue/artist/${primaryArtist.id}`}
+                  isStandalone
+                  color="secondary"
+                >
+                  {artistName}
+                </Link>
+              ) : (
+                <Text color="secondary">{artistName}</Text>
+              )}
+              {releaseYear && <Text color="secondary">{releaseYear}</Text>}
+              <Text color="secondary">{album.tracks.items.length} tracks</Text>
+            </VStack>
+          </HStack>
+          <List hasDividers>
+            {album.tracks.items.map((track) => (
+              <ListItem
+                key={track.id}
+                label={`${track.track_number}. ${track.name}`}
+                endContent={
+                  <HStack gap="sm" vAlign="center">
+                    {playedTrackIds.has(track.id) && (
+                      <Icon icon="check" color="success" size="sm" />
+                    )}
+                    <Text color="secondary">
+                      {formatDuration(track.duration_ms)}
+                    </Text>
+                  </HStack>
+                }
+              />
+            ))}
+          </List>
+        </VStack>
       )}
     </PageShell>
   );
