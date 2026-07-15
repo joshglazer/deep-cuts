@@ -12,6 +12,8 @@ export interface SpotifyAlbum {
   name: string;
   images: { url: string }[];
   artists: SpotifyArtist[];
+  /** ISO date, precision varies by release: "YYYY", "YYYY-MM", or "YYYY-MM-DD". */
+  release_date: string;
 }
 
 const MAX_RATE_LIMIT_RETRIES = 3;
@@ -23,9 +25,9 @@ const MAX_RATE_LIMIT_RETRIES = 3;
  * below), so a throttle hit is correlated across every signed-in user rather
  * than isolated to one person's token.
  */
-async function spotifyFetch<T>(path: string, accessToken: string): Promise<T> {
+async function spotifyFetch<T>(url: string, accessToken: string): Promise<T> {
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(`${SPOTIFY_API_BASE}${path}`, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -85,19 +87,15 @@ async function getAppAccessToken(): Promise<string> {
 }
 
 async function spotifyAppFetch<T>(path: string): Promise<T> {
-  return spotifyFetch<T>(path, await getAppAccessToken());
+  return spotifyFetch<T>(`${SPOTIFY_API_BASE}${path}`, await getAppAccessToken());
 }
 
-export function searchArtists(query: string) {
-  return spotifyAppFetch<{ artists: { items: SpotifyArtist[] } }>(
-    `/search?type=artist&q=${encodeURIComponent(query)}`
-  );
-}
-
-export function searchAlbums(query: string) {
-  return spotifyAppFetch<{ albums: { items: SpotifyAlbum[] } }>(
-    `/search?type=album&q=${encodeURIComponent(query)}`
-  );
+/** Single call covering both result types, so a combined search costs one request instead of two. */
+export function search(query: string) {
+  return spotifyAppFetch<{
+    artists: { items: SpotifyArtist[] };
+    albums: { items: SpotifyAlbum[] };
+  }>(`/search?type=artist,album&q=${encodeURIComponent(query)}`);
 }
 
 export interface SpotifyTrack {
@@ -123,6 +121,33 @@ export function getArtists(ids: string[]) {
   );
 }
 
+interface SpotifyAlbumsPage {
+  items: SpotifyAlbum[];
+  next: string | null;
+}
+
+/**
+ * Every album/single/compilation credited to an artist, paginating through
+ * Spotify's 50-per-page limit. Excludes "appears_on" credits (guest
+ * appearances on other artists' compilations) since those aren't part of the
+ * artist's own discography.
+ */
+export async function getArtistAlbums(artistId: string): Promise<SpotifyAlbum[]> {
+  const accessToken = await getAppAccessToken();
+  const albums: SpotifyAlbum[] = [];
+
+  let url: string | null =
+    `${SPOTIFY_API_BASE}/artists/${encodeURIComponent(artistId)}/albums` +
+    `?include_groups=album,single,compilation&limit=50`;
+  while (url) {
+    const page: SpotifyAlbumsPage = await spotifyFetch<SpotifyAlbumsPage>(url, accessToken);
+    albums.push(...page.items);
+    url = page.next;
+  }
+
+  return albums;
+}
+
 export interface RecentlyPlayedItem {
   track: {
     id: string;
@@ -135,7 +160,7 @@ export interface RecentlyPlayedItem {
 /** Used by the poll-spotify scheduled function to check for new plays. */
 export function getRecentlyPlayed(accessToken: string) {
   return spotifyFetch<{ items: RecentlyPlayedItem[] }>(
-    "/me/player/recently-played?limit=50",
+    `${SPOTIFY_API_BASE}/me/player/recently-played?limit=50`,
     accessToken
   );
 }

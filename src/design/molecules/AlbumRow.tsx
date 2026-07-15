@@ -8,12 +8,14 @@ export function AlbumRow({
   name,
   artistName,
   imageUrl,
+  releaseYear,
   href,
   endContent,
 }: {
   name: string;
   artistName: string;
   imageUrl?: string | null;
+  releaseYear?: string;
   href?: string;
   endContent?: ReactNode;
 }) {
@@ -34,6 +36,7 @@ export function AlbumRow({
           </Text>
         </VStack>
       </StackItem>
+      {releaseYear && <Text type="supporting">{releaseYear}</Text>}
       {endContent}
     </HStack>
   );
