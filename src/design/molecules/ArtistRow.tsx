@@ -16,7 +16,12 @@ export function ArtistRow({
 }) {
   return (
     <HStack gap="sm" vAlign="center" className="bg-surface rounded-lg p-2">
-      <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
+      <Thumbnail
+        src={imageUrl ?? undefined}
+        label={name}
+        alt=""
+        className="w-22 h-22 rounded-full [&_div]:rounded-full [&_img]:rounded-full"
+      />
       <StackItem size="fill">
         <Link href={href} isStandalone color="primary">
           {name}
