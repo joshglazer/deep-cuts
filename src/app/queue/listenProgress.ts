@@ -1,20 +1,28 @@
 import { dataClient } from "@/lib/amplify-server";
 
+export interface AlbumListenStats {
+  playedTrackIds: Set<string>;
+  lastPlayedAt?: string;
+}
+
 /** One query covers every queued album on the page, via the ListenEvent secondary index on spotifyUserId (sorted by spotifyAlbumId). */
-export async function getPlayedTrackIdsByAlbum(
+export async function getListenStatsByAlbum(
   spotifyUserId: string
-): Promise<Map<string, Set<string>>> {
+): Promise<Map<string, AlbumListenStats>> {
   const { data: events } =
     await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
       spotifyUserId,
     });
 
-  const byAlbum = new Map<string, Set<string>>();
+  const byAlbum = new Map<string, AlbumListenStats>();
   for (const event of events) {
     if (!event.spotifyAlbumId) continue;
-    const played = byAlbum.get(event.spotifyAlbumId) ?? new Set<string>();
-    played.add(event.spotifyTrackId);
-    byAlbum.set(event.spotifyAlbumId, played);
+    const stats = byAlbum.get(event.spotifyAlbumId) ?? { playedTrackIds: new Set<string>() };
+    stats.playedTrackIds.add(event.spotifyTrackId);
+    if (!stats.lastPlayedAt || event.playedAt > stats.lastPlayedAt) {
+      stats.lastPlayedAt = event.playedAt;
+    }
+    byAlbum.set(event.spotifyAlbumId, stats);
   }
   return byAlbum;
 }
