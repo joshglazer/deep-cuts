@@ -27,11 +27,16 @@ export function AlbumRow({
   return (
     <VStack gap="sm" className="bg-surface rounded-lg p-2">
       <HStack gap="sm" vAlign="center">
-        <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
+        <Thumbnail
+          src={imageUrl ?? undefined}
+          label={name}
+          alt=""
+          className="w-20 h-20"
+        />
         <StackItem size="fill">
           <VStack gap="sm">
             {href ? (
-              <Link href={href} isStandalone color="primary">
+              <Link href={href} isStandalone color="primary" maxLines={1}>
                 {name}
               </Link>
             ) : (
