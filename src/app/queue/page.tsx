@@ -95,7 +95,7 @@ export default async function QueuePage({
       title="My Queue"
       actions={
         albums.length > 0 && (
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
             <ViewToggle view={view} />
             {view === "flat" && <SortSelect sort={sort} />}
           </div>
