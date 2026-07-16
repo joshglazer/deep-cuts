@@ -98,14 +98,15 @@ export function AlbumRow({
                 </Text>
               </HStack>
             )}
-            {!progress && totalTracks !== undefined && (
+            {!progress && (releaseYear || totalTracks !== undefined) && (
               <Text type="supporting" maxLines={1}>
-                {totalTracks} tracks
+                {[releaseYear, totalTracks !== undefined ? `${totalTracks} tracks` : null]
+                  .filter(Boolean)
+                  .join(" · ")}
               </Text>
             )}
           </VStack>
         </StackItem>
-        {releaseYear && <Text type="supporting">{releaseYear}</Text>}
         {endContent}
       </HStack>
     </VStack>
