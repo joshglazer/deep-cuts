@@ -6,11 +6,13 @@ import type { Crumb } from "@/design/molecules/PageBreadcrumbs";
 export function PageShell({
   title,
   breadcrumbs,
+  titleActions,
   actions,
   children,
 }: {
   title: string;
   breadcrumbs?: Crumb[];
+  titleActions?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
 }) {
@@ -18,7 +20,12 @@ export function PageShell({
     <div>
       <Header />
       <div className="mx-auto max-w-2xl px-6 py-16">
-        <PageHeader title={title} breadcrumbs={breadcrumbs} actions={actions} />
+        <PageHeader
+          title={title}
+          breadcrumbs={breadcrumbs}
+          titleActions={titleActions}
+          actions={actions}
+        />
         {children}
       </div>
     </div>

@@ -10,8 +10,10 @@ import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
+import { IconButton } from "@/design/atoms/IconButton";
 import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
+import { FiPlus } from "react-icons/fi";
 
 export default async function QueuePage({
   searchParams,
@@ -96,6 +98,17 @@ export default async function QueuePage({
   return (
     <PageShell
       title="My Queue"
+      titleActions={
+        <IconButton
+          href="/queue/search"
+          label="Add to Queue"
+          tooltip="Add to Queue"
+          icon={<FiPlus />}
+          variant="secondary"
+          size="sm"
+          className="translate-y-[2px]"
+        />
+      }
       actions={albums.length > 0 && <ViewToggle view={view} />}
     >
       {isEmpty ? (
