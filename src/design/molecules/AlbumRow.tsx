@@ -40,27 +40,31 @@ export function AlbumRow({
             <Text type="supporting" maxLines={1}>
               {artistName}
             </Text>
+            {progress && (
+              <HStack gap="sm" vAlign="center">
+                {showProgress && (
+                  <StackItem size="fill">
+                    <ProgressBar
+                      label={`${progress.played} of ${progress.total} tracks played`}
+                      isLabelHidden
+                      value={progress.played}
+                      max={progress.total}
+                      variant="accent"
+                    />
+                  </StackItem>
+                )}
+                <Text type="supporting" maxLines={1}>
+                  {showProgress
+                    ? `${progress.played}/${progress.total} tracks`
+                    : `${progress.total} tracks`}
+                </Text>
+              </HStack>
+            )}
           </VStack>
         </StackItem>
         {releaseYear && <Text type="supporting">{releaseYear}</Text>}
         {endContent}
       </HStack>
-      {showProgress && (
-        <HStack gap="sm" vAlign="center">
-          <StackItem size="fill">
-            <ProgressBar
-              label={`${progress.played} of ${progress.total} tracks played`}
-              isLabelHidden
-              value={progress.played}
-              max={progress.total}
-              variant="accent"
-            />
-          </StackItem>
-          <Text type="supporting" maxLines={1}>
-            {progress.played}/{progress.total} tracks
-          </Text>
-        </HStack>
-      )}
     </VStack>
   );
 }
