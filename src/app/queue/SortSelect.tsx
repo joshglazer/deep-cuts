@@ -23,7 +23,7 @@ export function SortSelect({ sort }: { sort: AlbumSort }) {
   return (
     <Selector
       label="Sort by"
-      isLabelHidden
+      size="sm"
       value={sort}
       onChange={handleChange}
       options={ALBUM_SORT_OPTIONS}

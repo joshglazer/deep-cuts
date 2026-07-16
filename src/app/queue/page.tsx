@@ -12,7 +12,7 @@ import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
-import { HStack, VStack } from "@/design/atoms/Stack";
+import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
 export default async function QueuePage({
@@ -95,10 +95,10 @@ export default async function QueuePage({
       title="My Queue"
       actions={
         albums.length > 0 && (
-          <HStack gap="sm" vAlign="center">
-            {view === "flat" && <SortSelect sort={sort} />}
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end">
             <ViewToggle view={view} />
-          </HStack>
+            {view === "flat" && <SortSelect sort={sort} />}
+          </div>
         )
       }
     >
