@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Icon } from "../atoms/Icon";
 import { IconButton } from "../atoms/IconButton";
 import { MobileNav } from "../atoms/MobileNav";
 import { SideNavItem } from "../atoms/SideNav";
 
-export function HeaderMobileMenu() {
+export function HeaderMobileMenu({ brand }: { brand: ReactNode }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -23,7 +23,8 @@ export function HeaderMobileMenu() {
       <MobileNav
         isOpen={isOpen}
         onOpenChange={setIsOpen}
-        header="Deep Cuts"
+        header={brand}
+        label="Deep Cuts"
         side="start"
       >
         <SideNavItem
