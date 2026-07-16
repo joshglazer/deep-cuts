@@ -12,6 +12,9 @@ export async function Header() {
   return (
     <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
       <HStack gap="sm" vAlign="center">
+        <div className="sm:hidden">
+          <HeaderMobileMenu />
+        </div>
         <Logo />
         <Link
           href="/queue"
@@ -40,9 +43,6 @@ export async function Header() {
             await signOut();
           }}
         />
-        <div className="sm:hidden">
-          <HeaderMobileMenu />
-        </div>
       </HStack>
     </header>
   );
