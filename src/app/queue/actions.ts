@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import {
-  getAlbum,
   search as searchSpotify,
   getArtists,
   getArtistAlbums,
@@ -18,6 +17,7 @@ export interface AlbumSearchResult {
   artistName: string;
   imageUrl?: string;
   releaseYear?: string;
+  totalTracks: number;
 }
 
 export interface ArtistSearchResult {
@@ -34,6 +34,7 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
     artistName: album.artists.map((artist) => artist.name).join(", "),
     imageUrl: album.images[0]?.url,
     releaseYear: album.release_date?.slice(0, 4),
+    totalTracks: album.total_tracks,
   };
 }
 
@@ -112,17 +113,6 @@ export async function queueAlbum(album: AlbumSearchResult) {
   });
   if (existing.length > 0) return;
 
-  // Best-effort: used for the "x/y tracks played" progress indicator. If
-  // this fetch fails, the album still gets queued — its progress indicator
-  // just won't render until it's re-queued.
-  let totalTracks: number | undefined;
-  try {
-    const details = await getAlbum(album.spotifyAlbumId);
-    totalTracks = details.tracks.items.length;
-  } catch {
-    totalTracks = undefined;
-  }
-
   await dataClient.models.Album.create({
     spotifyUserId: session.spotifyUserId,
     spotifyAlbumId: album.spotifyAlbumId,
@@ -131,7 +121,7 @@ export async function queueAlbum(album: AlbumSearchResult) {
     artistName: album.artistName,
     imageUrl: album.imageUrl,
     queuedAt: new Date().toISOString(),
-    totalTracks,
+    totalTracks: album.totalTracks,
   });
 
   revalidatePath("/queue");

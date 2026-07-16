@@ -14,6 +14,7 @@ export interface SpotifyAlbum {
   artists: SpotifyArtist[];
   /** ISO date, precision varies by release: "YYYY", "YYYY-MM", or "YYYY-MM-DD". */
   release_date: string;
+  total_tracks: number;
 }
 
 const MAX_RATE_LIMIT_RETRIES = 3;
