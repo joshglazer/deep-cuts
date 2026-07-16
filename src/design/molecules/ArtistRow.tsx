@@ -15,7 +15,7 @@ export function ArtistRow({
   href: string;
 }) {
   return (
-    <HStack gap="sm" vAlign="center">
+    <HStack gap="sm" vAlign="center" className="bg-surface rounded-lg p-2">
       <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
       <StackItem size="fill">
         <Link href={href} isStandalone color="primary">

@@ -8,7 +8,9 @@ import { Thumbnail } from "../atoms/Thumbnail";
 export function AlbumRow({
   name,
   artistName,
+  artistHref,
   imageUrl,
+  spotifyAlbumId,
   releaseYear,
   totalTracks,
   href,
@@ -17,55 +19,95 @@ export function AlbumRow({
 }: {
   name: string;
   artistName: string;
+  artistHref?: string;
   imageUrl?: string | null;
+  spotifyAlbumId?: string;
   releaseYear?: string;
   totalTracks?: number;
   href?: string;
   progress?: { played: number; total: number };
   endContent?: ReactNode;
 }) {
+  const showProgress = progress && progress.played > 0;
+
+  const thumbnail = (
+    <Thumbnail
+      src={imageUrl ?? undefined}
+      label={name}
+      alt=""
+      className="w-20 h-20"
+    />
+  );
+
   return (
-    <HStack gap="sm" vAlign="center">
-      <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
-      <StackItem size="fill">
-        <VStack gap="sm">
-          {href ? (
-            <Link href={href} isStandalone color="primary">
-              {name}
-            </Link>
-          ) : (
-            <Text maxLines={1}>{name}</Text>
-          )}
-          <Text type="supporting" maxLines={1}>
-            {artistName}
-          </Text>
-        </VStack>
-      </StackItem>
-      {(releaseYear || (totalTracks !== undefined && !progress)) && (
-        <VStack gap="sm" hAlign="end">
-          {releaseYear && <Text type="supporting">{releaseYear}</Text>}
-          {totalTracks !== undefined && !progress && (
-            <Text type="supporting" maxLines={1}>
-              {totalTracks} tracks
-            </Text>
-          )}
-        </VStack>
-      )}
-      {progress && (
-        <VStack gap="sm" className="w-28">
-          <ProgressBar
-            label={`${progress.played} of ${progress.total} tracks played`}
-            isLabelHidden
-            value={progress.played}
-            max={progress.total}
-            variant="accent"
-          />
-          <Text type="supporting" maxLines={1}>
-            {progress.played}/{progress.total} tracks
-          </Text>
-        </VStack>
-      )}
-      {endContent}
-    </HStack>
+    <VStack gap="sm" className="bg-surface rounded-lg p-2">
+      <HStack gap="sm" vAlign="center">
+        {spotifyAlbumId ? (
+          <Link
+            href={`spotify:album:${spotifyAlbumId}`}
+            target="_blank"
+            isStandalone
+            hasUnderline={false}
+          >
+            {thumbnail}
+          </Link>
+        ) : (
+          thumbnail
+        )}
+        <StackItem size="fill">
+          <VStack gap="sm">
+            {href ? (
+              <Link href={href} isStandalone color="primary" maxLines={1}>
+                {name}
+              </Link>
+            ) : (
+              <Text maxLines={1}>{name}</Text>
+            )}
+            {artistHref ? (
+              <Link
+                href={artistHref}
+                isStandalone
+                type="supporting"
+                color="secondary"
+                maxLines={1}
+              >
+                {artistName}
+              </Link>
+            ) : (
+              <Text type="supporting" maxLines={1}>
+                {artistName}
+              </Text>
+            )}
+            {progress && (
+              <HStack gap="sm" vAlign="center">
+                {showProgress && (
+                  <StackItem size="fill">
+                    <ProgressBar
+                      label={`${progress.played} of ${progress.total} tracks played`}
+                      isLabelHidden
+                      value={progress.played}
+                      max={progress.total}
+                      variant="accent"
+                    />
+                  </StackItem>
+                )}
+                <Text type="supporting" maxLines={1}>
+                  {showProgress
+                    ? `${progress.played}/${progress.total} tracks`
+                    : `${progress.total} tracks`}
+                </Text>
+              </HStack>
+            )}
+            {!progress && totalTracks !== undefined && (
+              <Text type="supporting" maxLines={1}>
+                {totalTracks} tracks
+              </Text>
+            )}
+          </VStack>
+        </StackItem>
+        {releaseYear && <Text type="supporting">{releaseYear}</Text>}
+        {endContent}
+      </HStack>
+    </VStack>
   );
 }

@@ -128,7 +128,9 @@ export default async function QueuePage({
                   key={album.id}
                   name={album.name}
                   artistName={album.artistName}
+                  artistHref={`/queue/artist/${album.spotifyArtistId}`}
                   imageUrl={album.imageUrl}
+                  spotifyAlbumId={album.spotifyAlbumId}
                   href={`/queue/album/${album.spotifyAlbumId}`}
                   progress={
                     album.totalTracks != null
