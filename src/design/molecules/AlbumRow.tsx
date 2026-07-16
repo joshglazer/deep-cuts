@@ -35,7 +35,7 @@ export function AlbumRow({
       src={imageUrl ?? undefined}
       label={name}
       alt=""
-      className="w-24 h-24"
+      className="w-22 h-22"
     />
   );
 
