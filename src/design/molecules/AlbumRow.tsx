@@ -12,6 +12,7 @@ export function AlbumRow({
   imageUrl,
   spotifyAlbumId,
   releaseYear,
+  totalTracks,
   href,
   progress,
   endContent,
@@ -22,6 +23,7 @@ export function AlbumRow({
   imageUrl?: string | null;
   spotifyAlbumId?: string;
   releaseYear?: string;
+  totalTracks?: number;
   href?: string;
   progress?: { played: number; total: number };
   endContent?: ReactNode;
@@ -33,7 +35,7 @@ export function AlbumRow({
       src={imageUrl ?? undefined}
       label={name}
       alt=""
-      className="w-20 h-20"
+      className="w-22 h-22"
     />
   );
 
@@ -96,9 +98,15 @@ export function AlbumRow({
                 </Text>
               </HStack>
             )}
+            {!progress && (releaseYear || totalTracks !== undefined) && (
+              <Text type="supporting" maxLines={1}>
+                {[releaseYear, totalTracks !== undefined ? `${totalTracks} tracks` : null]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </Text>
+            )}
           </VStack>
         </StackItem>
-        {releaseYear && <Text type="supporting">{releaseYear}</Text>}
         {endContent}
       </HStack>
     </VStack>

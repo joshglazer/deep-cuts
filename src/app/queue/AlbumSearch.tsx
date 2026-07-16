@@ -125,6 +125,7 @@ export function AlbumSearch() {
                 imageUrl={album.imageUrl}
                 spotifyAlbumId={album.spotifyAlbumId}
                 releaseYear={album.releaseYear}
+                totalTracks={album.totalTracks}
                 endContent={
                   <Button
                     label={queued ? "Queued" : "Queue"}
