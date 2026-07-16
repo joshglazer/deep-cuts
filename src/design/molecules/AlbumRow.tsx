@@ -22,39 +22,45 @@ export function AlbumRow({
   progress?: { played: number; total: number };
   endContent?: ReactNode;
 }) {
+  const showProgress = progress && progress.played > 0;
+
   return (
-    <HStack gap="sm" vAlign="center" className="bg-surface rounded-lg p-2">
-      <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
-      <StackItem size="fill">
-        <VStack gap="sm">
-          {href ? (
-            <Link href={href} isStandalone color="primary">
-              {name}
-            </Link>
-          ) : (
-            <Text maxLines={1}>{name}</Text>
-          )}
-          <Text type="supporting" maxLines={1}>
-            {artistName}
-          </Text>
-        </VStack>
-      </StackItem>
-      {releaseYear && <Text type="supporting">{releaseYear}</Text>}
-      {progress && (
-        <VStack gap="sm" className="w-28">
-          <ProgressBar
-            label={`${progress.played} of ${progress.total} tracks played`}
-            isLabelHidden
-            value={progress.played}
-            max={progress.total}
-            variant="accent"
-          />
+    <VStack gap="sm" className="bg-surface rounded-lg p-2">
+      <HStack gap="sm" vAlign="center">
+        <Thumbnail src={imageUrl ?? undefined} label={name} alt="" />
+        <StackItem size="fill">
+          <VStack gap="sm">
+            {href ? (
+              <Link href={href} isStandalone color="primary">
+                {name}
+              </Link>
+            ) : (
+              <Text maxLines={1}>{name}</Text>
+            )}
+            <Text type="supporting" maxLines={1}>
+              {artistName}
+            </Text>
+          </VStack>
+        </StackItem>
+        {releaseYear && <Text type="supporting">{releaseYear}</Text>}
+        {endContent}
+      </HStack>
+      {showProgress && (
+        <HStack gap="sm" vAlign="center">
+          <StackItem size="fill">
+            <ProgressBar
+              label={`${progress.played} of ${progress.total} tracks played`}
+              isLabelHidden
+              value={progress.played}
+              max={progress.total}
+              variant="accent"
+            />
+          </StackItem>
           <Text type="supporting" maxLines={1}>
             {progress.played}/{progress.total} tracks
           </Text>
-        </VStack>
+        </HStack>
       )}
-      {endContent}
-    </HStack>
+    </VStack>
   );
 }
