@@ -20,7 +20,12 @@ export function HeaderMobileMenu() {
         size="sm"
         onClick={() => setIsOpen(true)}
       />
-      <MobileNav isOpen={isOpen} onOpenChange={setIsOpen} header="Deep Cuts">
+      <MobileNav
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        header="Deep Cuts"
+        side="start"
+      >
         <SideNavItem
           label="My Queue"
           href="/queue"
