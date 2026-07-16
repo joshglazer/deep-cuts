@@ -121,7 +121,9 @@ export function AlbumSearch() {
                 key={album.spotifyAlbumId}
                 name={album.name}
                 artistName={album.artistName}
+                artistHref={`/queue/search/artist/${album.spotifyArtistId}`}
                 imageUrl={album.imageUrl}
+                spotifyAlbumId={album.spotifyAlbumId}
                 releaseYear={album.releaseYear}
                 endContent={
                   <Button

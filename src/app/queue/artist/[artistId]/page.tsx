@@ -50,7 +50,9 @@ export default async function ArtistQueuePage({
               key={album.id}
               name={album.name}
               artistName={album.artistName}
+              artistHref={`/queue/artist/${artistId}`}
               imageUrl={album.imageUrl}
+              spotifyAlbumId={album.spotifyAlbumId}
               href={`/queue/album/${album.spotifyAlbumId}`}
               progress={
                 album.totalTracks != null

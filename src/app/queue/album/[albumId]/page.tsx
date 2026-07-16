@@ -66,11 +66,19 @@ export default async function AlbumTracksPage({
             <div className="w-40 shrink-0">
               <AspectRatio ratio={1}>
                 {album.images[0] && (
-                  <img
-                    src={album.images[0].url}
-                    alt=""
-                    className="h-full w-full rounded-lg object-cover"
-                  />
+                  <Link
+                    href={`spotify:album:${albumId}`}
+                    target="_blank"
+                    isStandalone
+                    hasUnderline={false}
+                    className="block h-full w-full"
+                  >
+                    <img
+                      src={album.images[0].url}
+                      alt=""
+                      className="h-full w-full rounded-lg object-cover"
+                    />
+                  </Link>
                 )}
               </AspectRatio>
             </div>

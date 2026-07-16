@@ -8,7 +8,9 @@ import { Thumbnail } from "../atoms/Thumbnail";
 export function AlbumRow({
   name,
   artistName,
+  artistHref,
   imageUrl,
+  spotifyAlbumId,
   releaseYear,
   href,
   progress,
@@ -16,7 +18,9 @@ export function AlbumRow({
 }: {
   name: string;
   artistName: string;
+  artistHref?: string;
   imageUrl?: string | null;
+  spotifyAlbumId?: string;
   releaseYear?: string;
   href?: string;
   progress?: { played: number; total: number };
@@ -24,15 +28,30 @@ export function AlbumRow({
 }) {
   const showProgress = progress && progress.played > 0;
 
+  const thumbnail = (
+    <Thumbnail
+      src={imageUrl ?? undefined}
+      label={name}
+      alt=""
+      className="w-20 h-20"
+    />
+  );
+
   return (
     <VStack gap="sm" className="bg-surface rounded-lg p-2">
       <HStack gap="sm" vAlign="center">
-        <Thumbnail
-          src={imageUrl ?? undefined}
-          label={name}
-          alt=""
-          className="w-20 h-20"
-        />
+        {spotifyAlbumId ? (
+          <Link
+            href={`spotify:album:${spotifyAlbumId}`}
+            target="_blank"
+            isStandalone
+            hasUnderline={false}
+          >
+            {thumbnail}
+          </Link>
+        ) : (
+          thumbnail
+        )}
         <StackItem size="fill">
           <VStack gap="sm">
             {href ? (
@@ -42,9 +61,21 @@ export function AlbumRow({
             ) : (
               <Text maxLines={1}>{name}</Text>
             )}
-            <Text type="supporting" maxLines={1}>
-              {artistName}
-            </Text>
+            {artistHref ? (
+              <Link
+                href={artistHref}
+                isStandalone
+                type="supporting"
+                color="secondary"
+                maxLines={1}
+              >
+                {artistName}
+              </Link>
+            ) : (
+              <Text type="supporting" maxLines={1}>
+                {artistName}
+              </Text>
+            )}
             {progress && (
               <HStack gap="sm" vAlign="center">
                 {showProgress && (
