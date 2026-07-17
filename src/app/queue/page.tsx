@@ -4,7 +4,9 @@ import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "./actions";
-import { getPlayedTrackIdsByAlbum } from "./listenProgress";
+import { getListenStatsByAlbum } from "./listenProgress";
+import { parseAlbumSort, sortAlbums } from "./sortAlbums";
+import { SortSelect } from "./SortSelect";
 import { ViewToggle } from "./ViewToggle";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
@@ -18,38 +20,33 @@ import { FiPlus } from "react-icons/fi";
 export default async function QueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; sort?: string }>;
 }) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");
   }
 
-  const { view: viewParam } = await searchParams;
+  const { view: viewParam, sort: sortParam } = await searchParams;
   const view = viewParam === "artist" ? "artist" : "flat";
+  const sort = parseAlbumSort(sortParam);
 
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
   // queuing artists (album search/queue already lives at /queue/search).
-  const [{ data: artists }, { data: albums }, playedTrackIdsByAlbum] = await Promise.all([
+  const [{ data: artists }, { data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Artist.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
     }),
     dataClient.models.Album.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
     }),
-    getPlayedTrackIdsByAlbum(session.spotifyUserId),
+    getListenStatsByAlbum(session.spotifyUserId),
   ]);
 
   const isEmpty = artists.length === 0 && albums.length === 0;
 
-  const sortedAlbums = albums
-    .slice()
-    .sort(
-      (a, b) =>
-        a.artistName.localeCompare(b.artistName) ||
-        a.name.localeCompare(b.name)
-    );
+  const sortedAlbums = sortAlbums(albums, sort, listenStatsByAlbum);
 
   const artistGroups = Array.from(
     sortedAlbums
@@ -109,7 +106,14 @@ export default async function QueuePage({
           className="translate-y-[2px]"
         />
       }
-      actions={albums.length > 0 && <ViewToggle view={view} />}
+      actions={
+        albums.length > 0 && (
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            <ViewToggle view={view} />
+            {view === "flat" && <SortSelect sort={sort} />}
+          </div>
+        )
+      }
     >
       {isEmpty ? (
         <EmptyState
@@ -148,7 +152,8 @@ export default async function QueuePage({
                   progress={
                     album.totalTracks != null
                       ? {
-                          played: playedTrackIdsByAlbum.get(album.spotifyAlbumId)?.size ?? 0,
+                          played:
+                            listenStatsByAlbum.get(album.spotifyAlbumId)?.playedTrackIds.size ?? 0,
                           total: album.totalTracks,
                         }
                       : undefined

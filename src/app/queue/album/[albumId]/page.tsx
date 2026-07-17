@@ -10,6 +10,7 @@ import { Link } from "@/design/atoms/Link";
 import { List, ListItem } from "@/design/atoms/List";
 import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
+import { FindMoreAlbumsButton } from "./FindMoreAlbumsButton";
 
 function formatDuration(durationMs: number) {
   const totalSeconds = Math.round(durationMs / 1000);
@@ -84,13 +85,19 @@ export default async function AlbumTracksPage({
             </div>
             <VStack gap="sm" justify="center">
               {primaryArtist ? (
-                <Link
-                  href={`/queue/artist/${primaryArtist.id}`}
-                  isStandalone
-                  color="secondary"
-                >
-                  {artistName}
-                </Link>
+                <HStack gap="sm" vAlign="center">
+                  <Link
+                    href={`/queue/artist/${primaryArtist.id}`}
+                    isStandalone
+                    color="secondary"
+                  >
+                    {artistName}
+                  </Link>
+                  <FindMoreAlbumsButton
+                    artistId={primaryArtist.id}
+                    artistName={primaryArtist.name}
+                  />
+                </HStack>
               ) : (
                 <Text color="secondary">{artistName}</Text>
               )}

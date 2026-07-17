@@ -3,7 +3,13 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "@/app/queue/actions";
-import { getPlayedTrackIdsByAlbum } from "@/app/queue/listenProgress";
+import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
+import {
+  ARTIST_PAGE_ALBUM_SORT_OPTIONS,
+  parseAlbumSort,
+  sortAlbums,
+} from "@/app/queue/sortAlbums";
+import { SortSelect } from "@/app/queue/SortSelect";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
@@ -11,8 +17,10 @@ import { VStack } from "@/design/atoms/Stack";
 
 export default async function ArtistQueuePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ artistId: string }>;
+  searchParams: Promise<{ sort?: string }>;
 }) {
   const session = await auth();
   if (!session?.spotifyUserId) {
@@ -20,23 +28,32 @@ export default async function ArtistQueuePage({
   }
 
   const { artistId } = await params;
+  const { sort: sortParam } = await searchParams;
+  const sort = parseAlbumSort(sortParam);
 
-  const [{ data: albums }, playedTrackIdsByAlbum] = await Promise.all([
+  const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Album.list({
       filter: {
         spotifyUserId: { eq: session.spotifyUserId },
         spotifyArtistId: { eq: artistId },
       },
     }),
-    getPlayedTrackIdsByAlbum(session.spotifyUserId),
+    getListenStatsByAlbum(session.spotifyUserId),
   ]);
 
   const artistName = albums[0]?.artistName ?? "Artist";
+
+  const sortedAlbums = sortAlbums(albums, sort, listenStatsByAlbum);
 
   return (
     <PageShell
       title={artistName}
       breadcrumbs={[{ label: "My Queue", href: "/queue" }, { label: artistName }]}
+      actions={
+        albums.length > 0 && (
+          <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
+        )
+      }
     >
       {albums.length === 0 ? (
         <EmptyState
@@ -45,7 +62,7 @@ export default async function ArtistQueuePage({
         />
       ) : (
         <VStack gap="sm">
-          {albums.map((album) => (
+          {sortedAlbums.map((album) => (
             <AlbumRow
               key={album.id}
               name={album.name}
@@ -57,7 +74,8 @@ export default async function ArtistQueuePage({
               progress={
                 album.totalTracks != null
                   ? {
-                      played: playedTrackIdsByAlbum.get(album.spotifyAlbumId)?.size ?? 0,
+                      played:
+                        listenStatsByAlbum.get(album.spotifyAlbumId)?.playedTrackIds.size ?? 0,
                       total: album.totalTracks,
                     }
                   : undefined
