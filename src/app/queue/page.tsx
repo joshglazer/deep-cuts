@@ -8,6 +8,7 @@ import { getListenStatsByAlbum } from "./listenProgress";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { SortSelect } from "./SortSelect";
 import { ViewToggle } from "./ViewToggle";
+import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
@@ -93,6 +94,14 @@ export default async function QueuePage({
   return (
     <PageShell
       title="My Queue"
+      titleActions={
+        <AddIconButton
+          href="/queue/search"
+          label="Add to Queue"
+          variant="secondary"
+          className="translate-y-[2px]"
+        />
+      }
       actions={
         albums.length > 0 && (
           <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">

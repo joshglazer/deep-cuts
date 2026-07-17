@@ -10,6 +10,7 @@ import {
   sortAlbums,
 } from "@/app/queue/sortAlbums";
 import { SortSelect } from "@/app/queue/SortSelect";
+import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
@@ -49,6 +50,14 @@ export default async function ArtistQueuePage({
     <PageShell
       title={artistName}
       breadcrumbs={[{ label: "My Queue", href: "/queue" }, { label: artistName }]}
+      titleActions={
+        <AddIconButton
+          label={`Find more albums by ${artistName}`}
+          href={`/queue/search/artist/${artistId}`}
+          variant="secondary"
+          className="translate-y-[2px]"
+        />
+      }
       actions={
         albums.length > 0 && (
           <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
