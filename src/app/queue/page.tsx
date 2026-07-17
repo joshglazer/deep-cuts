@@ -8,14 +8,13 @@ import { getListenStatsByAlbum } from "./listenProgress";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { SortSelect } from "./SortSelect";
 import { ViewToggle } from "./ViewToggle";
+import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
-import { IconButton } from "@/design/atoms/IconButton";
 import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
-import { FiPlus } from "react-icons/fi";
 
 export default async function QueuePage({
   searchParams,
@@ -96,13 +95,10 @@ export default async function QueuePage({
     <PageShell
       title="My Queue"
       titleActions={
-        <IconButton
+        <AddIconButton
           href="/queue/search"
           label="Add to Queue"
-          tooltip="Add to Queue"
-          icon={<FiPlus />}
           variant="secondary"
-          size="sm"
           className="translate-y-[2px]"
         />
       }

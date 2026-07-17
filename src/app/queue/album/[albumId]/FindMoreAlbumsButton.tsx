@@ -1,8 +1,4 @@
-"use client";
-
-import { LuPlus } from "react-icons/lu";
-import { Icon } from "@/design/atoms/Icon";
-import { IconButton } from "@/design/atoms/IconButton";
+import { AddIconButton } from "@/design/molecules/AddIconButton";
 
 export function FindMoreAlbumsButton({
   artistId,
@@ -12,12 +8,9 @@ export function FindMoreAlbumsButton({
   artistName: string;
 }) {
   return (
-    <IconButton
-      icon={<Icon icon={LuPlus} size="sm" />}
+    <AddIconButton
       label={`Find more albums by ${artistName}`}
       href={`/queue/search/artist/${artistId}`}
-      variant="ghost"
-      size="sm"
     />
   );
 }
