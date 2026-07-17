@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["lambda:ListFunctions", "lambda:PutFunctionConcurrency"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["scheduler:ListSchedules", "scheduler:GetSchedule", "scheduler:UpdateSchedule"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListAllMyBuckets", "s3:GetBucketPolicy", "s3:PutBucketPolicy"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["appsync:ListGraphqlApis"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["wafv2:ListWebACLs", "wafv2:CreateWebACL", "wafv2:GetWebACL", "wafv2:AssociateWebACL"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "*"
+    }
+  ]
+}

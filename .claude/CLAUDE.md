@@ -67,6 +67,52 @@ with your schema changes. Without it, any page that touches `dataClient`
 found: Can't resolve '../../amplify_outputs.json'` if the file is ever
 missing outright.
 
+## Budget kill switch: extend it when adding a new AWS service
+
+Account `194089666599` has a $50/month budget with an automated kill
+switch attached (full detail in README.md, "Cost controls: the $50 budget
+kill switch") — when spend hits $50, a Lambda function
+(`deep-cuts-budget-kill-switch`, source at
+`scripts/kill-switch-lambda/index.py`) zeros all Lambda concurrency,
+disables all EventBridge schedules, locks all S3 buckets, and blocks all
+AppSync APIs via WAF, account-wide.
+
+It covers those four service types *dynamically* — new Lambda functions,
+buckets, schedules, or AppSync APIs are picked up automatically, no
+changes needed. It does **not** cover any other AWS service. If you add a
+resource from a service the kill switch doesn't already touch — RDS, EC2,
+CloudFront, SQS, Cognito, Bedrock, a REST API Gateway, anything outside
+Lambda/EventBridge Scheduler/S3/AppSync — that resource will keep running
+(and keep costing money) through a firing unless you extend the kill
+switch as part of that change:
+
+1. Add a step to `scripts/kill-switch-lambda/index.py` that stops/blocks
+   the new resource type (list existing steps there for the pattern: dry
+   run support, per-resource try/except, results dict).
+2. Add whatever IAM actions that step needs to
+   `scripts/kill-switch-lambda/permissions.json`.
+3. Run `scripts/kill-switch-deploy.sh` to push both — editing these files
+   alone does nothing live until that runs.
+4. Verify with a dry-run invoke (`{"dry_run": true}` payload) before
+   trusting it.
+
+Treat this the same way as any other cross-cutting concern: if a task adds
+a new AWS service to this project, extending the kill switch is part of
+that task, not a follow-up to skip.
+
+**Don't point `scripts/kill-switch-undo.py` at the `deep-cuts` profile.**
+It defaults to `deep-cuts-breakglass` on purpose — `deep-cuts` assumes
+`OrganizationAccountAccessRole`, which is the exact role the kill switch's
+IAM deny action locks, so a recovery script running as `deep-cuts` would be
+blocked by the thing it's meant to undo. `deep-cuts-breakglass` is a
+separate IAM user (`DeepCutsBreakGlassRecovery`) carrying only the narrow
+permissions that script needs, immune to that deny by construction. If you
+add new undo logic that needs a permission the break-glass user doesn't
+have, extend its policy (attached via `iam put-user-policy`, not committed
+as a file anywhere — check current permissions with `aws iam
+list-user-policies` / `get-user-policy` against that user) rather than
+switching the script back to `deep-cuts`.
+
 <!-- ASTRYX:START -->
 Astryx v0.1.4 · 149 components
 CLI: run every command as `npx astryx <cmd>` (shown below as `astryx ...`).
