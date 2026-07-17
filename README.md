@@ -168,6 +168,121 @@ poll-spotify function) — and tear it down when the PR closes.
    Spotify-backed features (album search) stay non-functional under it —
    use the real Spotify sign-in (step 4) when you need those.
 
+## Cost controls: the $50 budget kill switch
+
+Account `194089666599` has an AWS Budget (`deep-cuts-monthly-cap`) capped at
+$50/month, with an automated kill switch attached — not just a spend alert.
+This exists because of a July 2026 incident where an AWS-side Cost Explorer
+bug briefly displayed a multi-million dollar S3 charge (confirmed by AWS as
+a display-only "Inaccurate Estimated Billing Data" bug — no real usage or
+charges were involved); this account's real spend normally runs a few cents
+a month, so $50 is a wide margin that should only ever trip on genuine
+runaway usage.
+
+**Alerts**: email to the account owner at 80% ($40) and 100% ($50) of actual
+monthly spend. Console: Billing and Cost Management → Budgeting and
+Planning → Budgets (see "Switching into this account" below).
+
+**At 100% ($50), two things fire automatically and in parallel:**
+
+1. A full-deny IAM policy (`DeepCutsBudgetCapDeny`) attaches to
+   `OrganizationAccountAccessRole` — blocks further deploys or CLI/console
+   changes made through that role.
+2. The budget notification publishes to an SNS topic
+   (`deep-cuts-budget-kill-switch`), which triggers a Lambda function of the
+   same name. That function:
+   - Sets every Lambda function's reserved concurrency to `0` (nothing can
+     execute, including `poll-spotify`)
+   - Disables both `poll-spotify` EventBridge schedules (sandbox + main)
+   - Attaches a deny policy to every S3 bucket (blocks Get/Put/Delete/List)
+   - Creates/reuses a WAFv2 Web ACL (`BudgetCapBlockAll`, default action
+     `Block`) and associates it with both AppSync APIs
+
+That WAF association is the piece that actually takes the live site down
+for real visitors, not just deploys — this is a genuine full stop by
+design, since the account owner decided a real spend spike is worth an
+outage to contain.
+
+### What's covered automatically, and what isn't
+
+The kill switch Lambda (`scripts/kill-switch-lambda/index.py`, deployed as
+`deep-cuts-budget-kill-switch`) discovers what to act on live, at fire time
+— it calls `list_functions`/`list_schedules`/`list_buckets`/
+`list_graphql_apis` fresh each run rather than working off a fixed list,
+and its IAM permissions (`scripts/kill-switch-lambda/permissions.json`,
+attached to `DeepCutsKillSwitchExecRole`) are scoped to `Resource: "*"`
+rather than specific ARNs. So:
+
+- **New resources of the same four types — automatically covered.** A new
+  Lambda function, a new S3 bucket, a new schedule, a second AppSync API —
+  all included the next time the switch fires, no code or permission
+  changes needed.
+- **A new AWS service category — not covered until someone updates it.**
+  The kill switch only has logic for Lambda, EventBridge Scheduler, S3, and
+  AppSync. If this project ever adds something outside those four (RDS,
+  EC2, CloudFront, SQS, Cognito, Bedrock, anything) it will keep running
+  (and keep costing money) right through a firing, until `index.py` gets a
+  new step for it and `permissions.json` gets the IAM actions that step
+  needs.
+- **Everything is scoped to `us-east-1`.** A resource deployed to a
+  different region wouldn't be discovered by any of the `list_*` calls
+  above.
+
+After editing `index.py` and/or `permissions.json`, run
+`scripts/kill-switch-deploy.sh` — AWS doesn't read from this repo, so
+edits are inert until that runs. It redeploys the Lambda code and
+re-syncs the IAM permissions in one step. Sanity-check with a dry run
+before trusting it:
+
+```bash
+aws lambda invoke --profile deep-cuts \
+  --function-name deep-cuts-budget-kill-switch \
+  --payload '{"dry_run": true}' --cli-binary-format raw-in-base64-out \
+  /tmp/out.json && cat /tmp/out.json
+```
+
+### Undoing it
+
+Nothing above deletes code or data — it's all reversible.
+
+```bash
+pip3 install boto3   # one-time, if not already installed
+python3 scripts/kill-switch-undo.py            # dry run — shows what it would undo
+python3 scripts/kill-switch-undo.py --apply    # actually undoes it
+```
+
+The script checks each of the five things above independently and only
+touches what's actually still in the "fired" state, so it's safe to re-run.
+
+**Why this doesn't lock itself out.** The obvious trap: the IAM deny action
+attaches to `OrganizationAccountAccessRole` — the same role the `deep-cuts`
+CLI profile assumes — so a recovery script that also used `deep-cuts` would
+be blocked by the exact thing it's trying to undo. (Switching role into
+`OrganizationAccountAccessRole` from the root account doesn't help either —
+the deny is attached to that role itself, so any session assuming it
+inherits the block, regardless of how you got there.) To avoid this,
+`kill-switch-undo.py` defaults to a separate profile,
+**`deep-cuts-breakglass`**, backed by a dedicated IAM user
+(`DeepCutsBreakGlassRecovery`) that's never a target of the deny policy and
+carries only the narrow permissions needed to undo the five things above —
+nothing else. It keeps working whether or not the deny has fired.
+
+That profile's access key lives in `~/.aws/credentials` on this machine
+only. **Back it up in a password manager** — if this machine is what's
+unavailable, that's the only other copy. To rotate it: `aws iam
+create-access-key --profile deep-cuts --user-name
+DeepCutsBreakGlassRecovery`, update `~/.aws/credentials`, then `aws iam
+delete-access-key --profile deep-cuts --user-name
+DeepCutsBreakGlassRecovery --access-key-id <old-id>`.
+
+**Turning the kill switch off entirely** (not just undoing one firing):
+delete the budget action via `aws budgets delete-budget-action
+--account-id 194089666599 --budget-name deep-cuts-monthly-cap --action-id
+<id>` (get `<id>` from `describe-budget-actions-for-budget`) and unsubscribe
+or delete the SNS topic. The $50 budget and its email alerts can be left in
+place on their own without the automated actions, if you'd rather just be
+notified than have it self-enforce.
+
 ## Status
 
 Built: Spotify OAuth sign-in, the DynamoDB data model, searching Spotify and
