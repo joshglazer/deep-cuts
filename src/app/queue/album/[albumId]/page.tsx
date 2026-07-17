@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { LuPlus } from "react-icons/lu";
 import { auth } from "@/auth";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackIds } from "@/app/queue/listenProgress";
@@ -7,11 +6,11 @@ import { PageShell } from "@/components/PageShell";
 import { AspectRatio } from "@/design/atoms/AspectRatio";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { Icon } from "@/design/atoms/Icon";
-import { IconButton } from "@/design/atoms/IconButton";
 import { Link } from "@/design/atoms/Link";
 import { List, ListItem } from "@/design/atoms/List";
 import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
+import { FindMoreAlbumsButton } from "./FindMoreAlbumsButton";
 
 function formatDuration(durationMs: number) {
   const totalSeconds = Math.round(durationMs / 1000);
@@ -94,12 +93,9 @@ export default async function AlbumTracksPage({
                   >
                     {artistName}
                   </Link>
-                  <IconButton
-                    icon={<Icon icon={LuPlus} size="sm" />}
-                    label={`Find more albums by ${primaryArtist.name}`}
-                    href={`/queue/search/artist/${primaryArtist.id}`}
-                    variant="ghost"
-                    size="sm"
+                  <FindMoreAlbumsButton
+                    artistId={primaryArtist.id}
+                    artistName={primaryArtist.name}
                   />
                 </HStack>
               ) : (
