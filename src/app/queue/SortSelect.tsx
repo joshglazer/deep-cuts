@@ -4,7 +4,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Selector } from "@/design/atoms/Selector";
 import { ALBUM_SORT_OPTIONS, DEFAULT_ALBUM_SORT, type AlbumSort } from "./sortAlbums";
 
-export function SortSelect({ sort }: { sort: AlbumSort }) {
+export function SortSelect({
+  sort,
+  options = ALBUM_SORT_OPTIONS,
+}: {
+  sort: AlbumSort;
+  options?: { value: AlbumSort; label: string }[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -27,7 +33,7 @@ export function SortSelect({ sort }: { sort: AlbumSort }) {
       size="sm"
       value={sort}
       onChange={handleChange}
-      options={ALBUM_SORT_OPTIONS}
+      options={options}
     />
   );
 }

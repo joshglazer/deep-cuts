@@ -4,7 +4,11 @@ import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "@/app/queue/actions";
 import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
-import { parseAlbumSort, sortAlbums } from "@/app/queue/sortAlbums";
+import {
+  ARTIST_PAGE_ALBUM_SORT_OPTIONS,
+  parseAlbumSort,
+  sortAlbums,
+} from "@/app/queue/sortAlbums";
 import { SortSelect } from "@/app/queue/SortSelect";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
@@ -45,7 +49,11 @@ export default async function ArtistQueuePage({
     <PageShell
       title={artistName}
       breadcrumbs={[{ label: "My Queue", href: "/queue" }, { label: artistName }]}
-      actions={albums.length > 0 && <SortSelect sort={sort} />}
+      actions={
+        albums.length > 0 && (
+          <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
+        )
+      }
     >
       {albums.length === 0 ? (
         <EmptyState
