@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { LuPlus } from "react-icons/lu";
 import { auth } from "@/auth";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackIds } from "@/app/queue/listenProgress";
@@ -6,6 +7,7 @@ import { PageShell } from "@/components/PageShell";
 import { AspectRatio } from "@/design/atoms/AspectRatio";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { Icon } from "@/design/atoms/Icon";
+import { IconButton } from "@/design/atoms/IconButton";
 import { Link } from "@/design/atoms/Link";
 import { List, ListItem } from "@/design/atoms/List";
 import { HStack, VStack } from "@/design/atoms/Stack";
@@ -84,13 +86,22 @@ export default async function AlbumTracksPage({
             </div>
             <VStack gap="sm" justify="center">
               {primaryArtist ? (
-                <Link
-                  href={`/queue/artist/${primaryArtist.id}`}
-                  isStandalone
-                  color="secondary"
-                >
-                  {artistName}
-                </Link>
+                <HStack gap="sm" vAlign="center">
+                  <Link
+                    href={`/queue/artist/${primaryArtist.id}`}
+                    isStandalone
+                    color="secondary"
+                  >
+                    {artistName}
+                  </Link>
+                  <IconButton
+                    icon={<Icon icon={LuPlus} size="sm" />}
+                    label={`Find more albums by ${primaryArtist.name}`}
+                    href={`/queue/search/artist/${primaryArtist.id}`}
+                    variant="ghost"
+                    size="sm"
+                  />
+                </HStack>
               ) : (
                 <Text color="secondary">{artistName}</Text>
               )}
