@@ -23,6 +23,36 @@ sign-in page. Always address the dev server as `http://127.0.0.1:3000`, not
 `http://localhost:3000` — in curl commands, browser preview/navigate tools,
 and any `AUTH_URL`/redirect URI references.
 
+## AWS spend: keep it minimal, always consider cost
+
+This project runs on AWS Amplify (see the `AWS_PROFILE=deep-cuts` /
+`d213vwy4ydt1` app referenced in memory) and is a small personal project, not
+production infrastructure with a real budget. Treat AWS cost as a hard
+constraint on every suggestion or action that touches AWS, not just a nice-to-have:
+
+- Never suggest or provision architecture that risks a large or unbounded
+  spend spike — no always-on compute sized for scale this app doesn't have
+  (e.g. provisioned-concurrency Lambdas, NAT gateways, RDS/Aurora clusters,
+  OpenSearch/Elasticsearch domains, Kinesis, multi-AZ redundancy "for safety"),
+  no uncapped autoscaling, no enabling detailed/long-retention logging or
+  tracing (X-Ray, verbose CloudWatch Logs) without a retention policy, and no
+  services billed per-request/per-GB at meaningful volume without first
+  estimating the cost.
+- Prefer the cheapest tier that satisfies the requirement: on-demand/serverless
+  over provisioned, pay-per-request DynamoDB over provisioned capacity,
+  shortest reasonable log retention, and turning off/deleting resources that
+  are no longer needed (e.g. stopping an `ampx sandbox` you're done with)
+  rather than leaving them running.
+- Before running any AWS CLI/console action that creates, resizes, or
+  configures a billable resource, briefly note the expected cost impact to the
+  user. If a change could plausibly cause a noticeable spend increase, flag it
+  explicitly and ask before proceeding, even if the action itself isn't in the
+  "explicit permission required" category above.
+- If asked to design a new feature that needs AWS infrastructure, default to
+  the lowest-cost serverless option (Amplify-managed resources, Lambda,
+  DynamoDB on-demand, S3) and call out cheaper alternatives if the user's
+  request implies something heavier.
+
 ## Previewing in a git worktree: run `npm run sandbox` first
 
 `src/lib/amplify-server.ts` imports `amplify_outputs.json`, which is
