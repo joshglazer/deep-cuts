@@ -11,6 +11,12 @@ export const ALBUM_SORT_OPTIONS: { value: AlbumSort; label: string }[] = [
   { value: "album", label: "Album name" },
 ];
 
+// Every album on an artist's queue page already shares the same artist, so
+// sorting by artist name there would be a no-op.
+export const ARTIST_PAGE_ALBUM_SORT_OPTIONS = ALBUM_SORT_OPTIONS.filter(
+  (option) => option.value !== "artist"
+);
+
 export function parseAlbumSort(value?: string): AlbumSort {
   return ALBUM_SORT_OPTIONS.some((option) => option.value === value)
     ? (value as AlbumSort)
