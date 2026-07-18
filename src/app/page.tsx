@@ -6,7 +6,7 @@ import { Divider } from "@/design/atoms/Divider";
 import { Grid } from "@/design/atoms/Grid";
 import { Heading } from "@/design/atoms/Heading";
 import { Text } from "@/design/atoms/Text";
-import { VStack } from "@/design/atoms/Stack";
+import { HStack, VStack } from "@/design/atoms/Stack";
 import { FeatureHighlight } from "@/design/molecules/FeatureHighlight";
 import { LuGauge, LuHeadphones, LuListPlus } from "react-icons/lu";
 import { SiSpotify } from "react-icons/si";
@@ -44,7 +44,12 @@ export default async function Home() {
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
       <VStack gap="lg" hAlign="center" width="100%">
         <VStack gap="md" hAlign="center">
-          <Logo className="h-12 w-12" />
+          <HStack gap="sm" vAlign="center">
+            <Logo className="h-10 w-10" />
+            <Text weight="bold" size="xl">
+              Deep Cuts
+            </Text>
+          </HStack>
           <Heading level={1} type="display-2" justify="center" textWrap="balance">
             Finally finish the albums you queue up
           </Heading>
