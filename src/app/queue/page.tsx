@@ -3,14 +3,13 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
-import { removeAlbum } from "./actions";
+import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
 import { FilterPopover } from "./FilterPopover";
 import { getListenStatsByAlbum } from "./listenProgress";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
-import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
@@ -173,14 +172,15 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                   }
                   isCompleted={Boolean(album.completedAt)}
                   endContent={
-                    <form action={removeAlbum.bind(null, album.id)}>
-                      <Button
-                        type="submit"
-                        variant="ghost"
-                        size="sm"
-                        label="Remove"
-                      />
-                    </form>
+                    <AlbumRowActionMenu
+                      albumId={album.id}
+                      albumName={album.name}
+                      artistName={album.artistName}
+                      spotifyAlbumId={album.spotifyAlbumId}
+                      albumHref={`/queue/album/${album.spotifyAlbumId}`}
+                      artistHref={`/queue/artist/${album.spotifyArtistId}`}
+                      addMoreHref={`/queue/search/artist/${album.spotifyArtistId}`}
+                    />
                   }
                 />
               ))}
