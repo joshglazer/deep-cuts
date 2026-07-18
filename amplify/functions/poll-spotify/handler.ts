@@ -48,8 +48,8 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   });
   if (albumErrors) throw new Error(JSON.stringify(albumErrors));
 
-  const queuedAlbumIds = new Set(queuedAlbums.map((album) => album.spotifyAlbumId));
-  const matches = recentlyPlayed.filter((item) => queuedAlbumIds.has(item.track.album.id));
+  const queuedAlbumsById = new Map(queuedAlbums.map((album) => [album.spotifyAlbumId, album]));
+  const matches = recentlyPlayed.filter((item) => queuedAlbumsById.has(item.track.album.id));
   if (matches.length === 0) return;
 
   // Spotify's recently-played endpoint only ever returns the last ~50
@@ -65,6 +65,20 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     existingEvents.map((event) => `${event.spotifyTrackId}|${event.playedAt}`)
   );
 
+  // Completion is only checked against albums touched by this poll (bounded
+  // by Spotify's ~50-item recently-played page, regardless of queue size),
+  // not every queued album — so this only needs played-track sets for that
+  // subset, seeded from history in case some of their tracks were played
+  // outside this poll's window.
+  const matchedAlbumIds = new Set(matches.map((item) => item.track.album.id));
+  const playedTrackIdsByAlbum = new Map<string, Set<string>>();
+  for (const event of existingEvents) {
+    if (!event.spotifyAlbumId || !matchedAlbumIds.has(event.spotifyAlbumId)) continue;
+    const played = playedTrackIdsByAlbum.get(event.spotifyAlbumId) ?? new Set<string>();
+    played.add(event.spotifyTrackId);
+    playedTrackIdsByAlbum.set(event.spotifyAlbumId, played);
+  }
+
   for (const item of matches) {
     const dedupeKey = `${item.track.id}|${item.played_at}`;
     if (alreadyRecorded.has(dedupeKey)) continue;
@@ -79,6 +93,26 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     });
     if (createErrors) {
       console.error(`poll-spotify: failed to write ListenEvent for ${spotifyUserId}`, createErrors);
+      continue;
+    }
+
+    const played = playedTrackIdsByAlbum.get(item.track.album.id) ?? new Set<string>();
+    played.add(item.track.id);
+    playedTrackIdsByAlbum.set(item.track.album.id, played);
+  }
+
+  for (const albumId of matchedAlbumIds) {
+    const album = queuedAlbumsById.get(albumId);
+    if (!album || album.completedAt || album.totalTracks == null) continue;
+    const playedCount = playedTrackIdsByAlbum.get(albumId)?.size ?? 0;
+    if (playedCount < album.totalTracks) continue;
+
+    const { errors: updateErrors } = await client.models.Album.update({
+      id: album.id,
+      completedAt: new Date().toISOString(),
+    });
+    if (updateErrors) {
+      console.error(`poll-spotify: failed to mark album ${album.id} completed`, updateErrors);
     }
   }
 }

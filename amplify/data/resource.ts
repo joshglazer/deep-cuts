@@ -43,6 +43,10 @@ const schema = a
         // so it degrades to hiding the progress indicator rather than
         // needing a migration.
         totalTracks: a.integer(),
+        // Set once poll-spotify observes every track played; null/unset means
+        // still active. Kept distinct from a hard delete so completed albums
+        // stay visible behind the queue page's "show completed" toggle.
+        completedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()]),
 
