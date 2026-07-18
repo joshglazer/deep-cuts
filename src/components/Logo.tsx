@@ -1,4 +1,8 @@
-export function Logo() {
+interface LogoProps {
+  className?: string;
+}
+
+export function Logo({ className }: Readonly<LogoProps>) {
   return (
     <svg
       width="36"
@@ -7,6 +11,7 @@ export function Logo() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      className={className}
     >
       <circle cx="16" cy="16" r="15" fill="#141414" stroke="#3f3f46" />
       <circle
