@@ -13,6 +13,26 @@ ids for a user, scoped to a single album. */` above
 leave it as filler. When trimming an existing comment, keep the "why" clause
 and cut the "what" clause rather than deleting the whole thing.
 
+## Component props: don't add one until a caller needs it
+
+Don't add a prop "for flexibility" or "in case a future caller wants it" —
+add it when a real call site actually needs to pass a non-default value. A
+prop whose default is never overridden anywhere in the codebase is dead
+code wearing a public API: it widens the component's surface and has to be
+read and reasoned about on every future edit, and the type checker won't
+flag it since it's still a valid, merely-unused signature.
+
+For example, `SortSelect` grew an `isLabelHidden` prop while building the
+queue filter popover, on the assumption the popover would want the
+control's built-in label visible. The popover ended up placing an external
+`Text` label next to the control instead (so the label column could stay a
+fixed width across rows), so every call site kept relying on
+`isLabelHidden`'s default — the prop was dead from the moment it landed,
+and only caught when someone asked "is this still needed?" Before adding a
+prop, check whether an existing call site actually needs to pass something
+other than the default; if not, hardcode the behavior and add the prop
+later, in the same change that introduces the caller that needs it.
+
 ## Local dev server: always use 127.0.0.1, never localhost
 
 Spotify's OAuth no longer allows `localhost` as a redirect URI hostname, and
