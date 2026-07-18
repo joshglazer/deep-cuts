@@ -1,7 +1,6 @@
 import { auth, signOut } from "@/auth";
-import { Logo } from "./Logo";
+import { Wordmark } from "./Wordmark";
 import { Button } from "@/design/atoms/Button";
-import { Heading } from "@/design/atoms/Heading";
 import { Link } from "@/design/atoms/Link";
 import { HStack } from "@/design/atoms/Stack";
 import { HeaderMobileMenu } from "@/design/molecules/HeaderMobileMenu";
@@ -14,27 +13,9 @@ export async function Header() {
     <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
       <HStack gap="sm" vAlign="center">
         <div className="sm:hidden">
-          <HeaderMobileMenu
-            brand={
-              <HStack gap="sm" vAlign="center">
-                <Logo />
-                <Heading level={2}>Deep Cuts</Heading>
-              </HStack>
-            }
-          />
+          <HeaderMobileMenu brand={<Wordmark />} />
         </div>
-        <Logo />
-        <Link
-          href="/queue"
-          isStandalone
-          hasUnderline={false}
-          weight="bold"
-          color="primary"
-          type="inherit"
-          className="text-2xl tracking-tight no-underline hover:no-underline"
-        >
-          Deep Cuts
-        </Link>
+        <Wordmark href="/queue" />
       </HStack>
       <HStack gap="lg" vAlign="center">
         <HStack gap="lg" vAlign="center" className="hidden sm:flex">
