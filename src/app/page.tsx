@@ -55,7 +55,7 @@ export default async function Home() {
             type="display-2"
             justify="center"
             textWrap="balance"
-            className="text-2xl sm:text-3xl"
+            className="text-xl sm:text-2xl"
           >
             Finally finish the albums you queue up
           </Heading>
