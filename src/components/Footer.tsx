@@ -8,8 +8,19 @@ export async function Footer() {
   const session = await auth();
 
   return (
-    <footer className="flex flex-col gap-2 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
-      <div className="flex items-center justify-between">
+    <footer>
+      {session?.spotifyUserId && (
+        <Text
+          type="supporting"
+          size="sm"
+          display="block"
+          justify="center"
+          className="px-6 pt-4"
+        >
+          Listening activity may be delayed up to 15 minutes.
+        </Text>
+      )}
+      <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
         <Text type="supporting" size="sm">
           A{" "}
           <Link
@@ -37,11 +48,6 @@ export async function Footer() {
           </Link>
         </HStack>
       </div>
-      {session?.spotifyUserId && (
-        <Text type="supporting" size="sm">
-          Listening activity may be delayed up to 15 minutes.
-        </Text>
-      )}
     </footer>
   );
 }
