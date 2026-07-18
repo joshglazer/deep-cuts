@@ -1,9 +1,12 @@
 import { SiGithub } from "react-icons/si";
+import { auth } from "@/auth";
 import { Text } from "@/design/atoms/Text";
 import { Link } from "@/design/atoms/Link";
 import { HStack } from "@/design/atoms/Stack";
 
-export function Footer() {
+export async function Footer() {
+  const session = await auth();
+
   return (
     <footer className="flex flex-col gap-2 border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
       <div className="flex items-center justify-between">
@@ -34,9 +37,11 @@ export function Footer() {
           </Link>
         </HStack>
       </div>
-      <Text type="supporting" size="sm">
-        Listening activity may be delayed up to 15 minutes.
-      </Text>
+      {session?.spotifyUserId && (
+        <Text type="supporting" size="sm">
+          Listening activity may be delayed up to 15 minutes.
+        </Text>
+      )}
     </footer>
   );
 }
