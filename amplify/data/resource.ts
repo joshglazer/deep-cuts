@@ -50,6 +50,13 @@ const schema = a
       })
       .authorization((allow) => [allow.publicApiKey()]),
 
+    // One row per play, not per track — replaying a track writes another
+    // event with a later playedAt rather than updating the existing one
+    // (poll-spotify dedupes only on the exact spotifyTrackId+playedAt pair).
+    // FUTURE OPTIMIZATION: if this table grows too large, stop tracking
+    // every repeat stream — e.g. give ListenEvent a compound identifier on
+    // (spotifyUserId, spotifyTrackId) and overwrite playedAt in place —
+    // rather than appending a row per play indefinitely.
     ListenEvent: a
       .model({
         spotifyUserId: a.string().required(),
