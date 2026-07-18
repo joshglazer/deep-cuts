@@ -57,7 +57,7 @@ export default async function Home() {
             textWrap="balance"
             className="text-xl sm:text-2xl"
           >
-            Finally finish the albums you queue up
+            Finally finish the albums you have wanted to listen to
           </Heading>
           <Text
             type="large"
