@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackIds } from "@/app/queue/listenProgress";
+import { TrackResetButton } from "./TrackResetButton";
 import { PageShell } from "@/components/PageShell";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AspectRatio } from "@/design/atoms/AspectRatio";
@@ -113,7 +114,14 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
                 endContent={
                   <HStack gap="sm" vAlign="center">
                     {playedTrackIds.has(track.id) && (
-                      <Icon icon="check" color="success" size="sm" />
+                      <>
+                        <Icon icon="check" color="success" size="sm" />
+                        <TrackResetButton
+                          spotifyAlbumId={albumId}
+                          spotifyTrackId={track.id}
+                          trackName={track.name}
+                        />
+                      </>
                     )}
                     <Text color="secondary">
                       {formatDuration(track.duration_ms)}
