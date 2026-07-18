@@ -170,7 +170,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                         }
                       : undefined
                   }
-                  isCompleted={Boolean(album.completedAt)}
+                  completedAt={album.completedAt}
                   endContent={
                     <AlbumRowActionMenu
                       albumId={album.id}

@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { dataClient } from "@/lib/amplify-server";
+import { formatCompletedDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackIds } from "@/app/queue/listenProgress";
 import { PageShell } from "@/components/PageShell";
@@ -11,6 +13,7 @@ import { Link } from "@/design/atoms/Link";
 import { List, ListItem } from "@/design/atoms/List";
 import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
+import { Tooltip } from "@/design/atoms/Tooltip";
 
 function formatDuration(durationMs: number) {
   const totalSeconds = Math.round(durationMs / 1000);
@@ -31,10 +34,17 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
 
   const { albumId } = await params;
 
-  const [album, playedTrackIds] = await Promise.all([
+  const [album, playedTrackIds, { data: queuedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
     getPlayedTrackIds(session.spotifyUserId, albumId),
+    dataClient.models.Album.list({
+      filter: {
+        spotifyUserId: { eq: session.spotifyUserId },
+        spotifyAlbumId: { eq: albumId },
+      },
+    }),
   ]);
+  const completedAt = queuedAlbums[0]?.completedAt;
 
   const artistName = album?.artists.map((artist) => artist.name).join(", ");
   const primaryArtist = album?.artists[0];
@@ -103,6 +113,14 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
               )}
               {releaseYear && <Text color="secondary">{releaseYear}</Text>}
               <Text color="secondary">{album.tracks.items.length} tracks</Text>
+              {completedAt && (
+                <HStack gap="sm" vAlign="center">
+                  <Tooltip content={`Completed ${formatCompletedDate(completedAt)}`}>
+                    <Icon icon="check" color="success" size="sm" />
+                  </Tooltip>
+                  <Text color="secondary">Completed</Text>
+                </HStack>
+              )}
             </VStack>
           </HStack>
           <List hasDividers>
