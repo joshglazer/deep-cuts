@@ -15,14 +15,12 @@ export function FeatureHighlight({
   description,
 }: Readonly<FeatureHighlightProps>) {
   return (
-    <VStack gap="sm">
-      <HStack hAlign="center" vAlign="center" className="h-11 w-11 rounded-full bg-accent-muted">
+    <VStack gap="sm" hAlign="center">
+      <HStack hAlign="center" vAlign="center" className="h-11 w-11 shrink-0 rounded-full bg-accent-muted">
         {icon}
       </HStack>
-      <VStack gap="sm">
-        <Heading level={3}>{title}</Heading>
-        <Text type="supporting">{description}</Text>
-      </VStack>
+      <Heading level={3} justify="center">{title}</Heading>
+      <Text type="supporting" justify="center">{description}</Text>
     </VStack>
   );
 }
