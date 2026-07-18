@@ -1,11 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LuEllipsisVertical, LuListChecks, LuPlay, LuPlus, LuTrash2, LuUser } from "react-icons/lu";
+import {
+  LuEllipsisVertical,
+  LuListChecks,
+  LuPlay,
+  LuPlus,
+  LuRotateCcw,
+  LuTrash2,
+  LuUser,
+} from "react-icons/lu";
 import { Icon } from "@/design/atoms/Icon";
 import { MoreMenu } from "@/design/atoms/MoreMenu";
 import { useImperativeAlertDialog } from "@/design/atoms/AlertDialog";
-import { removeAlbum } from "./actions";
+import { removeAlbum, resetAlbumProgress } from "./actions";
 
 interface AlbumRowActionMenuProps {
   albumId: string;
@@ -28,6 +36,7 @@ export function AlbumRowActionMenu({
 }: Readonly<AlbumRowActionMenuProps>) {
   const router = useRouter();
   const removeDialog = useImperativeAlertDialog();
+  const resetDialog = useImperativeAlertDialog();
 
   return (
     <>
@@ -45,6 +54,20 @@ export function AlbumRowActionMenu({
           { label: "Add More", icon: LuPlus, onClick: () => router.push(addMoreHref) },
           { type: "divider" },
           {
+            label: "Reset Progress",
+            icon: LuRotateCcw,
+            onClick: () =>
+              resetDialog.show({
+                title: "Reset progress?",
+                description: `Mark every track on "${albumName}" by ${artistName} as unplayed?`,
+                actionLabel: "Reset",
+                onAction: async () => {
+                  await resetAlbumProgress(albumId);
+                  resetDialog.hide();
+                },
+              }),
+          },
+          {
             label: "Remove",
             icon: LuTrash2,
             onClick: () =>
@@ -61,6 +84,7 @@ export function AlbumRowActionMenu({
         ]}
       />
       {removeDialog.element}
+      {resetDialog.element}
     </>
   );
 }
