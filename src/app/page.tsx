@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { auth, previewLoginEnabled, signIn } from "@/auth";
-import { Logo } from "@/components/Logo";
+import { Wordmark } from "@/components/Wordmark";
 import { Button } from "@/design/atoms/Button";
 import { Divider } from "@/design/atoms/Divider";
 import { Grid } from "@/design/atoms/Grid";
 import { Heading } from "@/design/atoms/Heading";
 import { Text } from "@/design/atoms/Text";
-import { HStack, VStack } from "@/design/atoms/Stack";
+import { VStack } from "@/design/atoms/Stack";
 import { FeatureHighlight } from "@/design/molecules/FeatureHighlight";
 import { LuGauge, LuHeadphones, LuListPlus } from "react-icons/lu";
 import { SiSpotify } from "react-icons/si";
@@ -44,12 +44,9 @@ export default async function Home() {
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
       <VStack gap="lg" hAlign="center" width="100%">
         <VStack gap="md" hAlign="center">
-          <HStack gap="sm" vAlign="center" className="mb-4">
-            <Logo className="h-14 w-14" />
-            <Text weight="bold" className="text-4xl">
-              Deep Cuts
-            </Text>
-          </HStack>
+          <div className="mb-4">
+            <Wordmark size="lg" />
+          </div>
           <Heading
             level={1}
             type="display-2"
