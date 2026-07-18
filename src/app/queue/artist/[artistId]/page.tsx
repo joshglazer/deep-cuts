@@ -110,7 +110,7 @@ export default async function ArtistQueuePage({
                     }
                   : undefined
               }
-              isCompleted={Boolean(album.completedAt)}
+              completedAt={album.completedAt}
               endContent={
                 <AlbumRowActionMenu
                   albumId={album.id}

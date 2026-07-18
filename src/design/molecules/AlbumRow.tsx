@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { formatDate } from "@/lib/formatDate";
 import { HStack, StackItem, VStack } from "../atoms/Stack";
 import { Icon } from "../atoms/Icon";
 import { Link } from "../atoms/Link";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
+import { Tooltip } from "../atoms/Tooltip";
 
 interface AlbumRowProps {
   name: string;
@@ -16,7 +18,7 @@ interface AlbumRowProps {
   totalTracks?: number;
   href?: string;
   progress?: { played: number; total: number };
-  isCompleted?: boolean;
+  completedAt?: string | null;
   endContent?: ReactNode;
 }
 
@@ -30,9 +32,10 @@ export function AlbumRow({
   totalTracks,
   href,
   progress,
-  isCompleted,
+  completedAt,
   endContent,
 }: Readonly<AlbumRowProps>) {
+  const isCompleted = Boolean(completedAt);
   const showProgress = progress && (isCompleted || progress.played > 0);
   // Completed albums always render as fully played, even if a stale
   // `progress.played` (e.g. a track later removed from the album) would say
@@ -100,7 +103,11 @@ export function AlbumRow({
                     />
                   </StackItem>
                 )}
-                {isCompleted && <Icon icon="check" color="success" size="sm" />}
+                {completedAt && (
+                  <Tooltip content={`Completed ${formatDate(completedAt)}`}>
+                    <Icon icon="check" color="success" size="sm" />
+                  </Tooltip>
+                )}
                 <Text type="supporting" maxLines={1}>
                   {showProgress
                     ? `${playedCount}/${progress.total} tracks`
