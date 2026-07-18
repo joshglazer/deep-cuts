@@ -4,11 +4,13 @@ import { PageShell } from "@/components/PageShell";
 import { getArtistDiscography } from "@/app/queue/actions";
 import { ArtistDiscography } from "./ArtistDiscography";
 
+interface ArtistDiscographyPageProps {
+  params: Promise<{ artistId: string }>;
+}
+
 export default async function ArtistDiscographyPage({
   params,
-}: {
-  params: Promise<{ artistId: string }>;
-}) {
+}: Readonly<ArtistDiscographyPageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");

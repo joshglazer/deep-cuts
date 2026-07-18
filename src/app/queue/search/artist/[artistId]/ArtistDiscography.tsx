@@ -8,7 +8,11 @@ import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 
-export function ArtistDiscography({ albums }: { albums: AlbumSearchResult[] }) {
+interface ArtistDiscographyProps {
+  albums: AlbumSearchResult[];
+}
+
+export function ArtistDiscography({ albums }: Readonly<ArtistDiscographyProps>) {
   const [queuedIds, setQueuedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isQueuing, startQueuing] = useTransition();

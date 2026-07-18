@@ -19,11 +19,11 @@ function formatDuration(durationMs: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export default async function AlbumTracksPage({
-  params,
-}: {
+interface AlbumTracksPageProps {
   params: Promise<{ albumId: string }>;
-}) {
+}
+
+export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");

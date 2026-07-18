@@ -13,19 +13,21 @@ import { Popover } from "@/design/atoms/Popover";
 import { HStack, StackItem, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
+interface FilterPopoverProps {
+  view?: "flat" | "artist";
+  sort: AlbumSort;
+  sortOptions?: { value: AlbumSort; label: string }[];
+  showCompleted: boolean;
+  hasCompletedAlbums: boolean;
+}
+
 export function FilterPopover({
   view,
   sort,
   sortOptions,
   showCompleted,
   hasCompletedAlbums,
-}: {
-  view?: "flat" | "artist";
-  sort: AlbumSort;
-  sortOptions?: { value: AlbumSort; label: string }[];
-  showCompleted: boolean;
-  hasCompletedAlbums: boolean;
-}) {
+}: Readonly<FilterPopoverProps>) {
   return (
     <Popover
       placement="below"

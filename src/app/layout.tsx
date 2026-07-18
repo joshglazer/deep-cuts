@@ -30,11 +30,11 @@ export const viewport: Viewport = {
   themeColor: "#141414",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+interface RootLayoutProps {
   children: React.ReactNode;
-}>) {
+}
+
+export default function RootLayout({ children }: Readonly<RootLayoutProps>) {
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">

@@ -4,15 +4,13 @@ import { useState } from "react";
 import { Avatar } from "../atoms/Avatar";
 import { DropdownMenu } from "../atoms/DropdownMenu";
 
-export function UserMenu({
-  name,
-  image,
-  onSignOut,
-}: {
+interface UserMenuProps {
   name?: string | null;
   image?: string | null;
   onSignOut: () => void;
-}) {
+}
+
+export function UserMenu({ name, image, onSignOut }: Readonly<UserMenuProps>) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (

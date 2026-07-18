@@ -3,17 +3,14 @@ import { Link } from "../atoms/Link";
 import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
 
-export function ArtistRow({
-  name,
-  imageUrl,
-  albumCount,
-  href,
-}: {
+interface ArtistRowProps {
   name: string;
   imageUrl?: string | null;
   albumCount?: number;
   href: string;
-}) {
+}
+
+export function ArtistRow({ name, imageUrl, albumCount, href }: Readonly<ArtistRowProps>) {
   return (
     <HStack gap="sm" vAlign="center" className="bg-surface rounded-lg p-2">
       <Thumbnail

@@ -20,7 +20,7 @@ export function SegmentedControl({
   onChange,
   label,
   options,
-}: SegmentedControlProps) {
+}: Readonly<SegmentedControlProps>) {
   return (
     <AstryxSegmentedControl value={value} onChange={onChange} label={label}>
       {options.map((option) => (

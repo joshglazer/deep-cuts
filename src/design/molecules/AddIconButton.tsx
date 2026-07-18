@@ -4,17 +4,19 @@ import { LuPlus } from "react-icons/lu";
 import { Icon } from "../atoms/Icon";
 import { IconButton, type IconButtonProps } from "../atoms/IconButton";
 
+interface AddIconButtonProps {
+  label: string;
+  href: string;
+  variant?: IconButtonProps["variant"];
+  className?: string;
+}
+
 export function AddIconButton({
   label,
   href,
   variant = "ghost",
   className,
-}: {
-  label: string;
-  href: string;
-  variant?: IconButtonProps["variant"];
-  className?: string;
-}) {
+}: Readonly<AddIconButtonProps>) {
   return (
     <IconButton
       icon={<Icon icon={LuPlus} size="sm" />}

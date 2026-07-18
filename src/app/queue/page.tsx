@@ -15,11 +15,11 @@ import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
-export default async function QueuePage({
-  searchParams,
-}: {
+interface QueuePageProps {
   searchParams: Promise<{ view?: string; sort?: string; completed?: string }>;
-}) {
+}
+
+export default async function QueuePage({ searchParams }: Readonly<QueuePageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");

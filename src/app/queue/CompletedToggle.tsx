@@ -3,7 +3,11 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Switch } from "@/design/atoms/Switch";
 
-export function CompletedToggle({ showCompleted }: { showCompleted: boolean }) {
+interface CompletedToggleProps {
+  showCompleted: boolean;
+}
+
+export function CompletedToggle({ showCompleted }: Readonly<CompletedToggleProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -16,7 +16,7 @@ export interface HStackProps extends Omit<AstryxHStackProps, "gap"> {
   gap?: StackGap;
 }
 
-export function HStack({ gap, ...props }: HStackProps) {
+export function HStack({ gap, ...props }: Readonly<HStackProps>) {
   return <AstryxHStack gap={gap && GAP_SCALE[gap]} {...props} />;
 }
 HStack.displayName = "HStack";
@@ -25,7 +25,7 @@ export interface VStackProps extends Omit<AstryxVStackProps, "gap"> {
   gap?: StackGap;
 }
 
-export function VStack({ gap, ...props }: VStackProps) {
+export function VStack({ gap, ...props }: Readonly<VStackProps>) {
   return <AstryxVStack gap={gap && GAP_SCALE[gap]} {...props} />;
 }
 VStack.displayName = "VStack";

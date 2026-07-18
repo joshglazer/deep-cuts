@@ -3,19 +3,21 @@ import { Header } from "./Header";
 import { PageHeader } from "@/design/molecules/PageHeader";
 import type { Crumb } from "@/design/molecules/PageBreadcrumbs";
 
+interface PageShellProps {
+  title: string;
+  breadcrumbs?: Crumb[];
+  titleActions?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}
+
 export function PageShell({
   title,
   breadcrumbs,
   titleActions,
   actions,
   children,
-}: {
-  title: string;
-  breadcrumbs?: Crumb[];
-  titleActions?: ReactNode;
-  actions?: ReactNode;
-  children: ReactNode;
-}) {
+}: Readonly<PageShellProps>) {
   return (
     <div>
       <Header />
