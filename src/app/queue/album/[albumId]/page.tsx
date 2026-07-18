@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
-import { formatCompletedDate } from "@/lib/formatDate";
+import { formatDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
-import { getPlayedTrackIds } from "@/app/queue/listenProgress";
+import { getPlayedTrackDates } from "@/app/queue/listenProgress";
 import { PageShell } from "@/components/PageShell";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AspectRatio } from "@/design/atoms/AspectRatio";
@@ -34,9 +34,9 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
 
   const { albumId } = await params;
 
-  const [album, playedTrackIds, { data: queuedAlbums }] = await Promise.all([
+  const [album, playedTrackDates, { data: queuedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
-    getPlayedTrackIds(session.spotifyUserId, albumId),
+    getPlayedTrackDates(session.spotifyUserId, albumId),
     dataClient.models.Album.list({
       filter: {
         spotifyUserId: { eq: session.spotifyUserId },
@@ -115,7 +115,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
               <Text color="secondary">{album.tracks.items.length} tracks</Text>
               {completedAt && (
                 <HStack gap="sm" vAlign="center">
-                  <Tooltip content={`Completed ${formatCompletedDate(completedAt)}`}>
+                  <Tooltip content={`Completed ${formatDate(completedAt)}`}>
                     <Icon icon="check" color="success" size="sm" />
                   </Tooltip>
                   <Text color="secondary">Completed</Text>
@@ -124,22 +124,27 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
             </VStack>
           </HStack>
           <List hasDividers>
-            {album.tracks.items.map((track) => (
-              <ListItem
-                key={track.id}
-                label={`${track.track_number}. ${track.name}`}
-                endContent={
-                  <HStack gap="sm" vAlign="center">
-                    {playedTrackIds.has(track.id) && (
-                      <Icon icon="check" color="success" size="sm" />
-                    )}
-                    <Text color="secondary">
-                      {formatDuration(track.duration_ms)}
-                    </Text>
-                  </HStack>
-                }
-              />
-            ))}
+            {album.tracks.items.map((track) => {
+              const playedAt = playedTrackDates.get(track.id);
+              return (
+                <ListItem
+                  key={track.id}
+                  label={`${track.track_number}. ${track.name}`}
+                  endContent={
+                    <HStack gap="sm" vAlign="center">
+                      {playedAt && (
+                        <Tooltip content={`Streamed ${formatDate(playedAt)}`}>
+                          <Icon icon="check" color="success" size="sm" />
+                        </Tooltip>
+                      )}
+                      <Text color="secondary">
+                        {formatDuration(track.duration_ms)}
+                      </Text>
+                    </HStack>
+                  }
+                />
+              );
+            })}
           </List>
         </VStack>
       )}

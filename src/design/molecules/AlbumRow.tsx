@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { formatCompletedDate } from "@/lib/formatDate";
+import { formatDate } from "@/lib/formatDate";
 import { HStack, StackItem, VStack } from "../atoms/Stack";
 import { Icon } from "../atoms/Icon";
 import { Link } from "../atoms/Link";
@@ -104,7 +104,7 @@ export function AlbumRow({
                   </StackItem>
                 )}
                 {completedAt && (
-                  <Tooltip content={`Completed ${formatCompletedDate(completedAt)}`}>
+                  <Tooltip content={`Completed ${formatDate(completedAt)}`}>
                     <Icon icon="check" color="success" size="sm" />
                   </Tooltip>
                 )}
