@@ -25,8 +25,8 @@ export function ViewToggle({ view }: { view: "flat" | "artist" }) {
       onChange={handleChange}
       label="Queue view"
       options={[
-        { value: "flat", label: "All albums" },
-        { value: "artist", label: "By artist" },
+        { value: "flat", label: "Albums" },
+        { value: "artist", label: "Artists" },
       ]}
     />
   );

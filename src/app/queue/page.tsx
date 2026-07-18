@@ -4,11 +4,9 @@ import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "./actions";
-import { CompletedToggle } from "./CompletedToggle";
+import { FilterPopover } from "./FilterPopover";
 import { getListenStatsByAlbum } from "./listenProgress";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
-import { SortSelect } from "./SortSelect";
-import { ViewToggle } from "./ViewToggle";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
@@ -112,11 +110,12 @@ export default async function QueuePage({
       }
       actions={
         albums.length > 0 && (
-          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
-            {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
-            <ViewToggle view={view} />
-            {view === "flat" && <SortSelect sort={sort} />}
-          </div>
+          <FilterPopover
+            view={view}
+            sort={sort}
+            showCompleted={showCompleted}
+            hasCompletedAlbums={hasCompletedAlbums}
+          />
         )
       }
     >

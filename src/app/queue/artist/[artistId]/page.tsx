@@ -3,14 +3,13 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "@/app/queue/actions";
-import { CompletedToggle } from "@/app/queue/CompletedToggle";
+import { FilterPopover } from "@/app/queue/FilterPopover";
 import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
   parseAlbumSort,
   sortAlbums,
 } from "@/app/queue/sortAlbums";
-import { SortSelect } from "@/app/queue/SortSelect";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Button } from "@/design/atoms/Button";
@@ -67,10 +66,12 @@ export default async function ArtistQueuePage({
       }
       actions={
         albums.length > 0 && (
-          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
-            {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
-            <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
-          </div>
+          <FilterPopover
+            sort={sort}
+            sortOptions={ARTIST_PAGE_ALBUM_SORT_OPTIONS}
+            showCompleted={showCompleted}
+            hasCompletedAlbums={hasCompletedAlbums}
+          />
         )
       }
     >
