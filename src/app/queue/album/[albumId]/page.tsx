@@ -4,6 +4,7 @@ import { dataClient } from "@/lib/amplify-server";
 import { formatDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
 import { getPlayedTrackDates } from "@/app/queue/listenProgress";
+import { TrackResetButton } from "./TrackResetButton";
 import { PageShell } from "@/components/PageShell";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AspectRatio } from "@/design/atoms/AspectRatio";
@@ -133,9 +134,16 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
                   endContent={
                     <HStack gap="sm" vAlign="center">
                       {playedAt && (
-                        <Tooltip content={`Streamed ${formatDate(playedAt)}`}>
-                          <Icon icon="check" color="success" size="sm" />
-                        </Tooltip>
+                        <>
+                          <Tooltip content={`Streamed ${formatDate(playedAt)}`}>
+                            <Icon icon="check" color="success" size="sm" />
+                          </Tooltip>
+                          <TrackResetButton
+                            spotifyAlbumId={albumId}
+                            spotifyTrackId={track.id}
+                            trackName={track.name}
+                          />
+                        </>
                       )}
                       <Text color="secondary">
                         {formatDuration(track.duration_ms)}

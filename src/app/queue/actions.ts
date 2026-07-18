@@ -141,3 +141,65 @@ export async function removeAlbum(id: string) {
   await dataClient.models.Album.delete({ id });
   revalidatePath("/queue");
 }
+
+export async function resetAlbumProgress(id: string) {
+  const session = await auth();
+  if (!session?.spotifyUserId) {
+    throw new Error("Not signed in");
+  }
+
+  const { data: album } = await dataClient.models.Album.get({ id });
+  if (!album || album.spotifyUserId !== session.spotifyUserId) {
+    return;
+  }
+
+  const { data: events } =
+    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId: session.spotifyUserId,
+      spotifyAlbumId: { eq: album.spotifyAlbumId },
+    });
+  await Promise.all(events.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+
+  if (album.completedAt) {
+    await dataClient.models.Album.update({ id: album.id, completedAt: null });
+  }
+
+  revalidatePath("/queue");
+  revalidatePath(`/queue/artist/${album.spotifyArtistId}`);
+  revalidatePath(`/queue/album/${album.spotifyAlbumId}`);
+}
+
+export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
+  const session = await auth();
+  if (!session?.spotifyUserId) {
+    throw new Error("Not signed in");
+  }
+
+  const { data: events } =
+    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId: session.spotifyUserId,
+      spotifyAlbumId: { eq: spotifyAlbumId },
+    });
+  const matches = events.filter((event) => event.spotifyTrackId === spotifyTrackId);
+  if (matches.length === 0) return;
+
+  await Promise.all(matches.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+
+  // Dropping below totalTracks means the album is no longer fully played —
+  // no secondary index on spotifyAlbumId alone, so this is a filtered scan
+  // like queueAlbum's dedupe check above.
+  const { data: albums } = await dataClient.models.Album.list({
+    filter: {
+      spotifyUserId: { eq: session.spotifyUserId },
+      spotifyAlbumId: { eq: spotifyAlbumId },
+    },
+  });
+  const album = albums[0];
+  if (album?.completedAt) {
+    await dataClient.models.Album.update({ id: album.id, completedAt: null });
+    revalidatePath(`/queue/artist/${album.spotifyArtistId}`);
+  }
+
+  revalidatePath(`/queue/album/${spotifyAlbumId}`);
+  revalidatePath("/queue");
+}
