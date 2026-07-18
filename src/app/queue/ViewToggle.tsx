@@ -3,7 +3,11 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SegmentedControl } from "@/design/atoms/SegmentedControl";
 
-export function ViewToggle({ view }: { view: "flat" | "artist" }) {
+interface ViewToggleProps {
+  view: "flat" | "artist";
+}
+
+export function ViewToggle({ view }: Readonly<ViewToggleProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

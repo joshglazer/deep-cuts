@@ -16,13 +16,15 @@ import { Button } from "@/design/atoms/Button";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 
+interface ArtistQueuePageProps {
+  params: Promise<{ artistId: string }>;
+  searchParams: Promise<{ sort?: string; completed?: string }>;
+}
+
 export default async function ArtistQueuePage({
   params,
   searchParams,
-}: {
-  params: Promise<{ artistId: string }>;
-  searchParams: Promise<{ sort?: string; completed?: string }>;
-}) {
+}: Readonly<ArtistQueuePageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");

@@ -6,6 +6,20 @@ import { ProgressBar } from "../atoms/ProgressBar";
 import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
 
+interface AlbumRowProps {
+  name: string;
+  artistName: string;
+  artistHref?: string;
+  imageUrl?: string | null;
+  spotifyAlbumId?: string;
+  releaseYear?: string;
+  totalTracks?: number;
+  href?: string;
+  progress?: { played: number; total: number };
+  isCompleted?: boolean;
+  endContent?: ReactNode;
+}
+
 export function AlbumRow({
   name,
   artistName,
@@ -18,19 +32,7 @@ export function AlbumRow({
   progress,
   isCompleted,
   endContent,
-}: {
-  name: string;
-  artistName: string;
-  artistHref?: string;
-  imageUrl?: string | null;
-  spotifyAlbumId?: string;
-  releaseYear?: string;
-  totalTracks?: number;
-  href?: string;
-  progress?: { played: number; total: number };
-  isCompleted?: boolean;
-  endContent?: ReactNode;
-}) {
+}: Readonly<AlbumRowProps>) {
   const showProgress = progress && (isCompleted || progress.played > 0);
   // Completed albums always render as fully played, even if a stale
   // `progress.played` (e.g. a track later removed from the album) would say

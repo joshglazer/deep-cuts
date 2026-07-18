@@ -5,13 +5,12 @@ export interface Crumb {
   href?: string;
 }
 
-export function PageBreadcrumbs({
-  items,
-  className,
-}: {
+interface PageBreadcrumbsProps {
   items: Crumb[];
   className?: string;
-}) {
+}
+
+export function PageBreadcrumbs({ items, className }: Readonly<PageBreadcrumbsProps>) {
   return (
     <Breadcrumbs className={className}>
       {items.map((item, index) => (

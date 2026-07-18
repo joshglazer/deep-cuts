@@ -7,7 +7,11 @@ import { IconButton } from "../atoms/IconButton";
 import { MobileNav } from "../atoms/MobileNav";
 import { SideNavItem } from "../atoms/SideNav";
 
-export function HeaderMobileMenu({ brand }: { brand: ReactNode }) {
+interface HeaderMobileMenuProps {
+  brand: ReactNode;
+}
+
+export function HeaderMobileMenu({ brand }: Readonly<HeaderMobileMenuProps>) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 

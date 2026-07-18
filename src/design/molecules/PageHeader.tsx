@@ -3,17 +3,19 @@ import { Heading } from "../atoms/Heading";
 import { HStack } from "../atoms/Stack";
 import { PageBreadcrumbs, type Crumb } from "./PageBreadcrumbs";
 
+interface PageHeaderProps {
+  title: string;
+  breadcrumbs?: Crumb[];
+  titleActions?: ReactNode;
+  actions?: ReactNode;
+}
+
 export function PageHeader({
   title,
   breadcrumbs,
   titleActions,
   actions,
-}: {
-  title: string;
-  breadcrumbs?: Crumb[];
-  titleActions?: ReactNode;
-  actions?: ReactNode;
-}) {
+}: Readonly<PageHeaderProps>) {
   return (
     <>
       {breadcrumbs && <PageBreadcrumbs items={breadcrumbs} className="mb-4" />}

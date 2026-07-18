@@ -33,6 +33,35 @@ prop, check whether an existing call site actually needs to pass something
 other than the default; if not, hardcode the behavior and add the prop
 later, in the same change that introduces the caller that needs it.
 
+## Component props: name the type `<Component>Props`
+
+Every component that takes a props parameter gets a dedicated type or
+interface named after the component plus a `Props` suffix — e.g.
+`AlbumRow`'s props are typed `AlbumRowProps`, `PageShell`'s are
+`PageShellProps`. Declare it just above the component and pass it as the
+parameter's type annotation, rather than inlining an anonymous `{ ... }`
+object type in the function signature. This applies to page/layout
+components too (`QueuePage` → `QueuePageProps`, `RootLayout` →
+`RootLayoutProps`), not just `src/design/**` and `src/components/**`.
+Components that take no props (e.g. `Logo`, `Footer`) don't need one.
+
+Don't export the type by default — only add `export` when another file
+actually needs to import it (e.g. to reference a sub-shape like
+`AlbumRowProps["progress"]`), same as the "don't add a prop until a caller
+needs it" rule above applied to the type itself.
+
+This keeps the props shape nameable and gives a single, greppable spot to
+read a component's public API instead of hunting for an inline type buried
+in the function signature.
+
+Destructure props against `Readonly<XProps>`, not `XProps`, in the
+function signature — e.g. `function AlbumRow({ name, ... }: Readonly<AlbumRowProps>)`.
+A component that mutates or reassigns one of its own props is almost
+always a bug (React re-renders from the parent's data, so a locally
+mutated prop gets silently overwritten and masks what should be local
+state instead); `Readonly<>` makes the type checker catch that at the
+assignment site rather than relying on convention.
+
 ## Local dev server: always use 127.0.0.1, never localhost
 
 Spotify's OAuth no longer allows `localhost` as a redirect URI hostname, and
