@@ -4,6 +4,7 @@ import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "./actions";
+import { CompletedToggle } from "./CompletedToggle";
 import { getListenStatsByAlbum } from "./listenProgress";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { SortSelect } from "./SortSelect";
@@ -19,16 +20,17 @@ import { Text } from "@/design/atoms/Text";
 export default async function QueuePage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string; sort?: string }>;
+  searchParams: Promise<{ view?: string; sort?: string; completed?: string }>;
 }) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");
   }
 
-  const { view: viewParam, sort: sortParam } = await searchParams;
+  const { view: viewParam, sort: sortParam, completed: completedParam } = await searchParams;
   const view = viewParam === "artist" ? "artist" : "flat";
   const sort = parseAlbumSort(sortParam);
+  const showCompleted = completedParam === "show";
 
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
@@ -44,8 +46,14 @@ export default async function QueuePage({
   ]);
 
   const isEmpty = artists.length === 0 && albums.length === 0;
+  const hasCompletedAlbums = albums.some((album) => album.completedAt);
+  const visibleAlbums = albums.filter((album) =>
+    showCompleted ? album.completedAt : !album.completedAt
+  );
+  const hasNoVisibleAlbums =
+    !isEmpty && artists.length === 0 && albums.length > 0 && visibleAlbums.length === 0;
 
-  const sortedAlbums = sortAlbums(albums, sort, listenStatsByAlbum);
+  const sortedAlbums = sortAlbums(visibleAlbums, sort, listenStatsByAlbum);
 
   const artistGroups = Array.from(
     sortedAlbums
@@ -105,6 +113,7 @@ export default async function QueuePage({
       actions={
         albums.length > 0 && (
           <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
             <ViewToggle view={view} />
             {view === "flat" && <SortSelect sort={sort} />}
           </div>
@@ -115,6 +124,15 @@ export default async function QueuePage({
         <EmptyState
           title="Nothing queued yet"
           description="Search and add an artist or album to get started."
+        />
+      ) : hasNoVisibleAlbums ? (
+        <EmptyState
+          title={showCompleted ? "No completed albums yet" : "All caught up"}
+          description={
+            showCompleted
+              ? "Albums you've fully listened to will show up here."
+              : "Every queued album has been fully listened to. Turn on “Show completed” to see them."
+          }
         />
       ) : (
         <VStack gap="md">
@@ -154,6 +172,7 @@ export default async function QueuePage({
                         }
                       : undefined
                   }
+                  isCompleted={Boolean(album.completedAt)}
                   endContent={
                     <form action={removeAlbum.bind(null, album.id)}>
                       <Button

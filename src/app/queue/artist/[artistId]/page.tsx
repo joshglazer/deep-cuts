@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { removeAlbum } from "@/app/queue/actions";
+import { CompletedToggle } from "@/app/queue/CompletedToggle";
 import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
@@ -21,7 +22,7 @@ export default async function ArtistQueuePage({
   searchParams,
 }: {
   params: Promise<{ artistId: string }>;
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; completed?: string }>;
 }) {
   const session = await auth();
   if (!session?.spotifyUserId) {
@@ -29,8 +30,9 @@ export default async function ArtistQueuePage({
   }
 
   const { artistId } = await params;
-  const { sort: sortParam } = await searchParams;
+  const { sort: sortParam, completed: completedParam } = await searchParams;
   const sort = parseAlbumSort(sortParam);
+  const showCompleted = completedParam === "show";
 
   const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Album.list({
@@ -43,8 +45,13 @@ export default async function ArtistQueuePage({
   ]);
 
   const artistName = albums[0]?.artistName ?? "Artist";
+  const hasCompletedAlbums = albums.some((album) => album.completedAt);
+  const visibleAlbums = albums.filter((album) =>
+    showCompleted ? album.completedAt : !album.completedAt
+  );
+  const hasNoVisibleAlbums = albums.length > 0 && visibleAlbums.length === 0;
 
-  const sortedAlbums = sortAlbums(albums, sort, listenStatsByAlbum);
+  const sortedAlbums = sortAlbums(visibleAlbums, sort, listenStatsByAlbum);
 
   return (
     <PageShell
@@ -60,7 +67,10 @@ export default async function ArtistQueuePage({
       }
       actions={
         albums.length > 0 && (
-          <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
+            <SortSelect sort={sort} options={ARTIST_PAGE_ALBUM_SORT_OPTIONS} />
+          </div>
         )
       }
     >
@@ -68,6 +78,15 @@ export default async function ArtistQueuePage({
         <EmptyState
           title="No albums queued for this artist"
           description="Albums you queue for this artist will show up here."
+        />
+      ) : hasNoVisibleAlbums ? (
+        <EmptyState
+          title={showCompleted ? "No completed albums yet" : "All caught up"}
+          description={
+            showCompleted
+              ? "Albums by this artist you've fully listened to will show up here."
+              : "Every queued album by this artist has been fully listened to. Turn on “Show completed” to see them."
+          }
         />
       ) : (
         <VStack gap="sm">
@@ -89,6 +108,7 @@ export default async function ArtistQueuePage({
                     }
                   : undefined
               }
+              isCompleted={Boolean(album.completedAt)}
               endContent={
                 <form action={removeAlbum.bind(null, album.id)}>
                   <Button

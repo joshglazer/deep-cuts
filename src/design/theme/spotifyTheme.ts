@@ -31,4 +31,15 @@ export const spotifyTheme = defineTheme({
     "--color-icon-accent": ["#1DB954", "#1DB954"],
     "--color-on-accent": ["#000000", "#000000"],
   },
+
+  components: {
+    progressbar: {
+      // Neutral pins the "accent" variant fill to a fixed blue
+      // (`--color-accent: #0074e2`) instead of reading the theme's actual
+      // accent token, so it needs its own override to pick up Spotify green.
+      "variant:accent": {
+        "--color-accent": "#1DB954",
+      },
+    },
+  },
 });

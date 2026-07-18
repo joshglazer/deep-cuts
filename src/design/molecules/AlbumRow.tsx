@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { HStack, StackItem, VStack } from "../atoms/Stack";
+import { Icon } from "../atoms/Icon";
 import { Link } from "../atoms/Link";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { Text } from "../atoms/Text";
@@ -15,6 +16,7 @@ export function AlbumRow({
   totalTracks,
   href,
   progress,
+  isCompleted,
   endContent,
 }: {
   name: string;
@@ -26,9 +28,14 @@ export function AlbumRow({
   totalTracks?: number;
   href?: string;
   progress?: { played: number; total: number };
+  isCompleted?: boolean;
   endContent?: ReactNode;
 }) {
-  const showProgress = progress && progress.played > 0;
+  const showProgress = progress && (isCompleted || progress.played > 0);
+  // Completed albums always render as fully played, even if a stale
+  // `progress.played` (e.g. a track later removed from the album) would say
+  // otherwise — completion is the source of truth once it's set.
+  const playedCount = progress && isCompleted ? progress.total : progress?.played;
 
   const thumbnail = (
     <Thumbnail
@@ -83,17 +90,18 @@ export function AlbumRow({
                 {showProgress && (
                   <StackItem size="fill">
                     <ProgressBar
-                      label={`${progress.played} of ${progress.total} tracks played`}
+                      label={`${playedCount} of ${progress.total} tracks played`}
                       isLabelHidden
-                      value={progress.played}
+                      value={playedCount}
                       max={progress.total}
                       variant="accent"
                     />
                   </StackItem>
                 )}
+                {isCompleted && <Icon icon="check" color="success" size="sm" />}
                 <Text type="supporting" maxLines={1}>
                   {showProgress
-                    ? `${progress.played}/${progress.total} tracks`
+                    ? `${playedCount}/${progress.total} tracks`
                     : `${progress.total} tracks`}
                 </Text>
               </HStack>

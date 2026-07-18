@@ -65,6 +65,17 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     existingEvents.map((event) => `${event.spotifyTrackId}|${event.playedAt}`)
   );
 
+  // Seeded from this user's full listen history so an album that was
+  // already 100% played before this poll (or before completion-tracking
+  // shipped) still gets picked up below, not just ones with a new play.
+  const playedTrackIdsByAlbum = new Map<string, Set<string>>();
+  for (const event of existingEvents) {
+    if (!event.spotifyAlbumId) continue;
+    const played = playedTrackIdsByAlbum.get(event.spotifyAlbumId) ?? new Set<string>();
+    played.add(event.spotifyTrackId);
+    playedTrackIdsByAlbum.set(event.spotifyAlbumId, played);
+  }
+
   for (const item of matches) {
     const dedupeKey = `${item.track.id}|${item.played_at}`;
     if (alreadyRecorded.has(dedupeKey)) continue;
@@ -79,6 +90,25 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     });
     if (createErrors) {
       console.error(`poll-spotify: failed to write ListenEvent for ${spotifyUserId}`, createErrors);
+      continue;
+    }
+
+    const played = playedTrackIdsByAlbum.get(item.track.album.id) ?? new Set<string>();
+    played.add(item.track.id);
+    playedTrackIdsByAlbum.set(item.track.album.id, played);
+  }
+
+  for (const album of queuedAlbums) {
+    if (album.completedAt || album.totalTracks == null) continue;
+    const playedCount = playedTrackIdsByAlbum.get(album.spotifyAlbumId)?.size ?? 0;
+    if (playedCount < album.totalTracks) continue;
+
+    const { errors: updateErrors } = await client.models.Album.update({
+      id: album.id,
+      completedAt: new Date().toISOString(),
+    });
+    if (updateErrors) {
+      console.error(`poll-spotify: failed to mark album ${album.id} completed`, updateErrors);
     }
   }
 }
