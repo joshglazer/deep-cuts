@@ -44,7 +44,7 @@ export default async function Home() {
     <div className="mx-auto max-w-3xl px-6 py-16 sm:py-24">
       <VStack gap="lg" hAlign="center" width="100%">
         <VStack gap="md" hAlign="center">
-          <HStack gap="sm" vAlign="center">
+          <HStack gap="sm" vAlign="center" className="mb-4">
             <Logo className="h-14 w-14" />
             <Text weight="bold" className="text-4xl">
               Deep Cuts
