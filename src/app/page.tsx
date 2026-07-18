@@ -45,12 +45,18 @@ export default async function Home() {
       <VStack gap="lg" hAlign="center" width="100%">
         <VStack gap="md" hAlign="center">
           <HStack gap="sm" vAlign="center">
-            <Logo className="h-10 w-10" />
-            <Text weight="bold" size="xl">
+            <Logo className="h-14 w-14" />
+            <Text weight="bold" className="text-4xl">
               Deep Cuts
             </Text>
           </HStack>
-          <Heading level={1} type="display-2" justify="center" textWrap="balance">
+          <Heading
+            level={1}
+            type="display-2"
+            justify="center"
+            textWrap="balance"
+            className="text-4xl sm:text-5xl"
+          >
             Finally finish the albums you queue up
           </Heading>
           <Text
