@@ -1,3 +1,5 @@
+"use client";
+
 import { LuTrendingDown, LuTrendingUp } from "react-icons/lu";
 import type { TrendStat } from "./statsData";
 import { Badge } from "@/design/atoms/Badge";
