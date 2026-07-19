@@ -32,15 +32,15 @@ export function HeaderMobileMenu({ brand }: Readonly<HeaderMobileMenuProps>) {
         side="start"
       >
         <SideNavItem
-          label="My Queue"
-          href="/queue"
-          isSelected={pathname === "/queue"}
+          label="My List"
+          href="/list"
+          isSelected={pathname === "/list"}
           onClick={() => setIsOpen(false)}
         />
         <SideNavItem
-          label="Add to Queue"
-          href="/queue/search"
-          isSelected={pathname?.startsWith("/queue/search") ?? false}
+          label="Add to List"
+          href="/list/search"
+          isSelected={pathname?.startsWith("/list/search") ?? false}
           onClick={() => setIsOpen(false)}
         />
       </MobileNav>

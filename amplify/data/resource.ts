@@ -26,7 +26,7 @@ const schema = a
         spotifyArtistId: a.string().required(),
         name: a.string().required(),
         imageUrl: a.string(),
-        queuedAt: a.datetime().required(),
+        addedAt: a.datetime().required(),
       })
       .authorization((allow) => [allow.publicApiKey()]),
 
@@ -38,14 +38,14 @@ const schema = a
         name: a.string().required(),
         artistName: a.string().required(),
         imageUrl: a.string(),
-        queuedAt: a.datetime().required(),
-        // Optional: albums queued before this field existed won't have it,
+        addedAt: a.datetime().required(),
+        // Optional: albums added before this field existed won't have it,
         // so it degrades to hiding the progress indicator rather than
         // needing a migration.
         totalTracks: a.integer(),
         // Set once poll-spotify observes every track played; null/unset means
         // still active. Kept distinct from a hard delete so completed albums
-        // stay visible behind the queue page's "show completed" toggle.
+        // stay visible behind the list page's "show completed" toggle.
         completedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()]),
@@ -67,7 +67,7 @@ const schema = a
         playedAt: a.datetime().required(),
       })
       .authorization((allow) => [allow.publicApiKey()])
-      // Otherwise every lookup here (queue-page aggregate, track-list page,
+      // Otherwise every lookup here (list-page aggregate, track-list page,
       // poll-spotify's dedup check) is a full table scan.
       .secondaryIndexes((index) => [
         index("spotifyUserId").sortKeys(["spotifyAlbumId"]),

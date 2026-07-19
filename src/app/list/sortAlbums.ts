@@ -11,7 +11,7 @@ export const ALBUM_SORT_OPTIONS: { value: AlbumSort; label: string }[] = [
   { value: "album", label: "Album name" },
 ];
 
-// Every album on an artist's queue page already shares the same artist, so
+// Every album on an artist's list page already shares the same artist, so
 // sorting by artist name there would be a no-op.
 export const ARTIST_PAGE_ALBUM_SORT_OPTIONS = ALBUM_SORT_OPTIONS.filter(
   (option) => option.value !== "artist"
@@ -26,7 +26,7 @@ export function parseAlbumSort(value?: string): AlbumSort {
 interface SortableAlbum {
   name: string;
   artistName: string;
-  queuedAt: string;
+  addedAt: string;
   spotifyAlbumId: string;
 }
 
@@ -38,18 +38,18 @@ export function sortAlbums<T extends SortableAlbum>(
   const sorted = albums.slice();
   switch (sort) {
     case "recently-added":
-      sorted.sort((a, b) => b.queuedAt.localeCompare(a.queuedAt));
+      sorted.sort((a, b) => b.addedAt.localeCompare(a.addedAt));
       break;
     case "recently-played":
       sorted.sort((a, b) => {
         const aPlayedAt = listenStatsByAlbum.get(a.spotifyAlbumId)?.lastPlayedAt;
         const bPlayedAt = listenStatsByAlbum.get(b.spotifyAlbumId)?.lastPlayedAt;
         // Albums with no listen history yet sort after ones that have been
-        // played, ordered among themselves by most recently queued.
+        // played, ordered among themselves by most recently added.
         if (aPlayedAt && bPlayedAt) return bPlayedAt.localeCompare(aPlayedAt);
         if (aPlayedAt) return -1;
         if (bPlayedAt) return 1;
-        return b.queuedAt.localeCompare(a.queuedAt);
+        return b.addedAt.localeCompare(a.addedAt);
       });
       break;
     case "album":

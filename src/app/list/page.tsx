@@ -6,7 +6,7 @@ import { PageShell } from "@/components/PageShell";
 import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
 import { FilterPopover } from "./FilterPopover";
 import { getListenStatsByAlbum } from "./listenProgress";
-import { albumHref, artistQueueHref, artistSearchHref } from "./routes";
+import { albumHref, artistListHref, artistSearchHref } from "./routes";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
@@ -15,11 +15,11 @@ import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
 
-interface QueuePageProps {
+interface ListPageProps {
   searchParams: Promise<{ view?: string; sort?: string; completed?: string }>;
 }
 
-export default async function QueuePage({ searchParams }: Readonly<QueuePageProps>) {
+export default async function ListPage({ searchParams }: Readonly<ListPageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");
@@ -32,7 +32,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
 
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
-  // queuing artists (album search/queue already lives at /queue/search).
+  // adding artists (album search/add already lives at /list/search).
   const [{ data: artists }, { data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Artist.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
@@ -73,7 +73,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   // Swap in the artist's real profile image where we can — falls back to the
-  // first queued album's cover (set above) if Spotify's API is unreachable.
+  // first listed album's cover (set above) if Spotify's API is unreachable.
   if (view === "artist" && artistGroups.length > 0) {
     try {
       const spotifyArtistIds = artistGroups.map((artist) => artist.spotifyArtistId);
@@ -99,11 +99,11 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
 
   return (
     <PageShell
-      title="My Queue"
+      title="My List"
       titleActions={
         <AddIconButton
-          href="/queue/search"
-          label="Add to Queue"
+          href="/list/search"
+          label="Add to List"
           variant="secondary"
           className="translate-y-[2px]"
         />
@@ -121,7 +121,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
     >
       {isEmpty ? (
         <EmptyState
-          title="Nothing queued yet"
+          title="Nothing on your list yet"
           description="Search and add an artist or album to get started."
         />
       ) : hasNoVisibleAlbums ? (
@@ -130,7 +130,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
           description={
             showCompleted
               ? "Albums you've fully listened to will show up here."
-              : "Every queued album has been fully listened to. Turn on “Show completed” to see them."
+              : "Every album on your list has been fully listened to. Turn on “Show completed” to see them."
           }
         />
       ) : (
@@ -147,7 +147,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                   name={artist.name}
                   imageUrl={artist.imageUrl}
                   albumCount={artist.albumCount}
-                  href={artistQueueHref(artist.spotifyArtistId)}
+                  href={artistListHref(artist.spotifyArtistId)}
                 />
               ))}
             </VStack>
@@ -157,7 +157,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                 <AlbumRow
                   key={album.id}
                   album={album}
-                  artistHref={artistQueueHref(album.spotifyArtistId)}
+                  artistHref={artistListHref(album.spotifyArtistId)}
                   href={albumHref(album.spotifyAlbumId)}
                   progress={
                     album.totalTracks != null
@@ -176,7 +176,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                       artistName={album.artistName}
                       spotifyAlbumId={album.spotifyAlbumId}
                       albumHref={albumHref(album.spotifyAlbumId)}
-                      artistHref={artistQueueHref(album.spotifyArtistId)}
+                      artistHref={artistListHref(album.spotifyArtistId)}
                       addMoreHref={artistSearchHref(album.spotifyArtistId)}
                     />
                   }

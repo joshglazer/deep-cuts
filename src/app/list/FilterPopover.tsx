@@ -32,7 +32,7 @@ export function FilterPopover({
     <Popover
       placement="below"
       alignment="end"
-      label="Filter queue"
+      label="Filter list"
       width={288}
       content={
         <VStack gap="md">

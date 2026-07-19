@@ -2,7 +2,7 @@ import { defineFunction, secret } from "@aws-amplify/backend";
 
 /**
  * Runs on a fixed schedule and checks connected users' Spotify "recently
- * played" history against their queued artists/albums, recording matches as
+ * played" history against the artists/albums on their list, recording matches as
  * ListenEvents. Every 15 minutes comfortably covers Spotify's recently-played
  * endpoint, which only returns the last ~50 tracks.
  */

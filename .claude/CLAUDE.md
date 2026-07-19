@@ -23,7 +23,7 @@ read and reasoned about on every future edit, and the type checker won't
 flag it since it's still a valid, merely-unused signature.
 
 For example, `SortSelect` grew an `isLabelHidden` prop while building the
-queue filter popover, on the assumption the popover would want the
+list filter popover, on the assumption the popover would want the
 control's built-in label visible. The popover ended up placing an external
 `Text` label next to the control instead (so the label column could stay a
 fixed width across rows), so every call site kept relying on
@@ -41,7 +41,7 @@ interface named after the component plus a `Props` suffix — e.g.
 `PageShellProps`. Declare it just above the component and pass it as the
 parameter's type annotation, rather than inlining an anonymous `{ ... }`
 object type in the function signature. This applies to page/layout
-components too (`QueuePage` → `QueuePageProps`, `RootLayout` →
+components too (`ListPage` → `ListPageProps`, `RootLayout` →
 `RootLayoutProps`), not just `src/design/**` and `src/components/**`.
 Components that take no props (e.g. `Logo`, `Footer`) don't need one.
 
@@ -112,7 +112,7 @@ copied from — not a live sync. As soon as you touch `amplify/**` in your own
 worktree, run `npm run sandbox` (`ampx sandbox --profile deep-cuts`) and
 leave it running in the background so `amplify_outputs.json` stays in sync
 with your schema changes. Without it, any page that touches `dataClient`
-(e.g. `/queue`, `/queue/artist/[artistId]`) fails to compile with `Module not
+(e.g. `/list`, `/list/artist/[artistId]`) fails to compile with `Module not
 found: Can't resolve '../../amplify_outputs.json'` if the file is ever
 missing outright.
 

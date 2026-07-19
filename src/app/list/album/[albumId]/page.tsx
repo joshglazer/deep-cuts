@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { formatDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
-import { getPlayedTrackDates } from "@/app/queue/listenProgress";
+import { getPlayedTrackDates } from "@/app/list/listenProgress";
 import { TrackResetButton } from "./TrackResetButton";
 import { PageShell } from "@/components/PageShell";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
@@ -35,7 +35,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
 
   const { albumId } = await params;
 
-  const [album, playedTrackDates, { data: queuedAlbums }] = await Promise.all([
+  const [album, playedTrackDates, { data: listedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
     getPlayedTrackDates(session.spotifyUserId, albumId),
     dataClient.models.Album.list({
@@ -45,7 +45,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
       },
     }),
   ]);
-  const completedAt = queuedAlbums[0]?.completedAt;
+  const completedAt = listedAlbums[0]?.completedAt;
 
   const artistName = album?.artists.map((artist) => artist.name).join(", ");
   const primaryArtist = album?.artists[0];
@@ -55,12 +55,12 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
     <PageShell
       title={album?.name ?? "Album"}
       breadcrumbs={[
-        { label: "My Queue", href: "/queue" },
+        { label: "My List", href: "/list" },
         ...(primaryArtist
           ? [
               {
                 label: primaryArtist.name,
-                href: `/queue/artist/${primaryArtist.id}`,
+                href: `/list/artist/${primaryArtist.id}`,
               },
             ]
           : []),
@@ -98,7 +98,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
               {primaryArtist ? (
                 <HStack gap="sm" vAlign="center">
                   <Link
-                    href={`/queue/artist/${primaryArtist.id}`}
+                    href={`/list/artist/${primaryArtist.id}`}
                     isStandalone
                     color="secondary"
                   >
@@ -106,7 +106,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
                   </Link>
                   <AddIconButton
                     label={`Find more albums by ${primaryArtist.name}`}
-                    href={`/queue/search/artist/${primaryArtist.id}`}
+                    href={`/list/search/artist/${primaryArtist.id}`}
                   />
                 </HStack>
               ) : (

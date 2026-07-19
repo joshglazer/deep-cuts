@@ -6,7 +6,7 @@ import { dataClient } from "@/lib/amplify-server";
 
 // Scopes needed to read what's currently/recently playing (for the polling
 // job) and to look up the user's profile id (used as the partition key for
-// their queue and listen history in DynamoDB).
+// their list and listen history in DynamoDB).
 const SPOTIFY_SCOPES = [
   "user-read-email",
   "user-read-private",

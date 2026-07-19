@@ -5,8 +5,8 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Deep Cuts",
     short_name: "Deep Cuts",
     description:
-      "Queue up artists and albums, then see when you actually got around to listening to them.",
-    start_url: "/queue",
+      "Add artists and albums to your list, then see when you actually got around to listening to them.",
+    start_url: "/list",
     display: "standalone",
     background_color: "#141414",
     theme_color: "#1DB954",

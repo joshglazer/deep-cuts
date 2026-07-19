@@ -72,8 +72,8 @@ export function AlbumRowActionMenu({
             icon: LuTrash2,
             onClick: () =>
               removeDialog.show({
-                title: "Remove from queue?",
-                description: `Remove "${albumName}" by ${artistName} from your queue?`,
+                title: "Remove from list?",
+                description: `Remove "${albumName}" by ${artistName} from your list?`,
                 actionLabel: "Remove",
                 onAction: async () => {
                   await removeAlbum(albumId);
