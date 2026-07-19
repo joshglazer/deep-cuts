@@ -110,13 +110,6 @@ export default async function Home() {
                 description={feature.description}
               />
             );
-            // With 3 items and columns={{ minWidth: 200 }} on this max-w-3xl
-            // (768px) container with a 24px gap, the grid only has room for
-            // 3 columns once the viewport hits 696px — below that it's 2
-            // columns, and the last item wraps alone under the first
-            // column. Center it full-width there instead; at 696px+ let it
-            // sit in the grid normally. Recompute this breakpoint if
-            // minWidth, gap, or the container's max width change.
             return index === FEATURES.length - 1 && FEATURES.length % 2 === 1 ? (
               <div
                 key={feature.title}
