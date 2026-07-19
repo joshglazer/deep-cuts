@@ -10,6 +10,7 @@ import {
   LuTrash2,
   LuUser,
 } from "react-icons/lu";
+import { spotifyAlbumUri } from "@/lib/spotifyLinks";
 import { Icon } from "@/design/atoms/Icon";
 import { MoreMenu } from "@/design/atoms/MoreMenu";
 import { useImperativeAlertDialog } from "@/design/atoms/AlertDialog";
@@ -47,7 +48,7 @@ export function AlbumRowActionMenu({
           {
             label: "Play",
             icon: LuPlay,
-            onClick: () => window.open(`spotify:album:${spotifyAlbumId}`, "_blank"),
+            onClick: () => window.open(spotifyAlbumUri(spotifyAlbumId), "_blank"),
           },
           { label: "Progress", icon: LuListChecks, onClick: () => router.push(albumHref) },
           { label: "Artist Albums", icon: LuUser, onClick: () => router.push(artistHref) },

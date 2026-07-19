@@ -10,7 +10,7 @@ export async function Header() {
   const session = await auth();
 
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+    <header className="flex items-center justify-between border-b border-border px-6 py-4">
       <HStack gap="sm" vAlign="center">
         <div className="sm:hidden">
           <HeaderMobileMenu brand={<Wordmark />} />
