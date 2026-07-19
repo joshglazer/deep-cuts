@@ -4,7 +4,7 @@ import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const description =
-  "Add artists and albums to your list, then see when you actually got around to listening to them.";
+  "Add albums to your list, then see when you actually got around to listening to them.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.AUTH_URL ?? "http://127.0.0.1:3000"),

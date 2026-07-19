@@ -18,7 +18,7 @@ const FEATURES = [
     icon: <LuListPlus className={ICON_CLASS} />,
     title: "Add anything to your list",
     description:
-      "Search Spotify and add artists or albums you've been meaning to dig into — no pressure to start right away.",
+      "Search Spotify and add albums you've been meaning to dig into — no pressure to start right away.",
   },
   {
     icon: <LuHeadphones className={ICON_CLASS} />,
@@ -62,8 +62,8 @@ export default async function Home() {
             justify="center"
             className="max-w-md"
           >
-            Add artists and albums to your list, then see when you actually
-            got around to listening to them.
+            Add albums to your list, then see when you actually got around to
+            listening to them.
           </Text>
         </VStack>
 
@@ -102,14 +102,32 @@ export default async function Home() {
         <Divider className="w-full max-w-xs pt-4" />
 
         <Grid columns={{ minWidth: 200 }} gap={6} width="100%">
-          {FEATURES.map((feature) => (
-            <FeatureHighlight
-              key={feature.title}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-            />
-          ))}
+          {FEATURES.map((feature, index) => {
+            const highlight = (
+              <FeatureHighlight
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+              />
+            );
+            // With 3 items and columns={{ minWidth: 200 }} on this max-w-3xl
+            // (768px) container with a 24px gap, the grid only has room for
+            // 3 columns once the viewport hits 696px — below that it's 2
+            // columns, and the last item wraps alone under the first
+            // column. Center it full-width there instead; at 696px+ let it
+            // sit in the grid normally. Recompute this breakpoint if
+            // minWidth, gap, or the container's max width change.
+            return index === FEATURES.length - 1 && FEATURES.length % 2 === 1 ? (
+              <div
+                key={feature.title}
+                className="col-span-full mx-auto max-w-xs min-[696px]:col-span-1 min-[696px]:mx-0 min-[696px]:max-w-none"
+              >
+                {highlight}
+              </div>
+            ) : (
+              <div key={feature.title}>{highlight}</div>
+            );
+          })}
         </Grid>
       </VStack>
     </div>
