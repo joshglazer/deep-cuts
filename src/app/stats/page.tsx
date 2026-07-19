@@ -22,9 +22,9 @@ export default async function StatsPage() {
         <VStack gap="lg">
           <Grid columns={{ minWidth: 200 }} gap={4}>
             <StatTile label="Total songs streamed" value={stats.totalStreams} />
+            <StatTile label="Day streak" value={stats.streakDays} />
             <StatTile label="This month" value={stats.thisMonth.count} trend={stats.thisMonth} />
             <StatTile label="This week" value={stats.thisWeek.count} trend={stats.thisWeek} />
-            <StatTile label="Day streak" value={stats.streakDays} />
           </Grid>
           <ActivityHeatmap days={stats.heatmap} />
         </VStack>
