@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { formatDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
@@ -30,19 +29,16 @@ interface AlbumTracksPageProps {
 }
 
 export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPageProps>) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrRedirect();
 
   const { albumId } = await params;
 
   const [album, playedTrackDates, { data: listedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
-    getPlayedTrackDates(session.spotifyUserId, albumId),
+    getPlayedTrackDates(spotifyUserId, albumId),
     dataClient.models.Album.list({
       filter: {
-        spotifyUserId: { eq: session.spotifyUserId },
+        spotifyUserId: { eq: spotifyUserId },
         spotifyAlbumId: { eq: albumId },
       },
     }),

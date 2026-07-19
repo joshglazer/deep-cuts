@@ -1,13 +1,9 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { PageShell } from "@/components/PageShell";
 import { AlbumSearch } from "../AlbumSearch";
 
 export default async function ListSearchPage() {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  await requireSpotifyUserIdOrRedirect();
 
   return (
     <PageShell title="Add to List">

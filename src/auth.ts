@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Spotify from "next-auth/providers/spotify";
 import Credentials from "next-auth/providers/credentials";
@@ -136,3 +137,40 @@ export const authConfig: NextAuthConfig = {
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+
+/**
+ * Guard for signed-in pages. `redirect()` never returns, so callers get a
+ * plain string back and don't have to re-narrow the session themselves.
+ */
+export async function requireSpotifyUserIdOrRedirect(): Promise<string> {
+  const session = await auth();
+  if (!session?.spotifyUserId) {
+    redirect("/");
+  }
+  return session.spotifyUserId;
+}
+
+/**
+ * Same check for server actions, which have no page to navigate to — the
+ * thrown error surfaces to the caller's catch instead.
+ */
+export async function requireSpotifyUserIdOrThrow(): Promise<string> {
+  const session = await auth();
+  if (!session?.spotifyUserId) {
+    throw new Error("Not signed in");
+  }
+  return session.spotifyUserId;
+}
+
+/**
+ * Weaker guard for actions that only read app-level Spotify data. The
+ * preview-login path has a user but no spotifyUserId (see providers above),
+ * and search/discography still work there since they run on the app-level
+ * Client Credentials token rather than the user's.
+ */
+export async function requireSignedIn(): Promise<void> {
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not signed in");
+  }
+}

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { AlbumRowActionMenu } from "@/app/list/AlbumRowActionMenu";
@@ -25,10 +24,7 @@ export default async function ArtistListPage({
   params,
   searchParams,
 }: Readonly<ArtistListPageProps>) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrRedirect();
 
   const { artistId } = await params;
   const { sort: sortParam, completed: completedParam } = await searchParams;
@@ -38,11 +34,11 @@ export default async function ArtistListPage({
   const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Album.list({
       filter: {
-        spotifyUserId: { eq: session.spotifyUserId },
+        spotifyUserId: { eq: spotifyUserId },
         spotifyArtistId: { eq: artistId },
       },
     }),
-    getListenStatsByAlbum(session.spotifyUserId),
+    getListenStatsByAlbum(spotifyUserId),
   ]);
 
   const artistName = albums[0]?.artistName ?? "Artist";

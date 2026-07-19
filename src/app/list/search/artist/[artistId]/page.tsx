@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { PageShell } from "@/components/PageShell";
 import { getArtistDiscography } from "@/app/list/actions";
 import { ArtistDiscography } from "./ArtistDiscography";
@@ -11,10 +10,7 @@ interface ArtistDiscographyPageProps {
 export default async function ArtistDiscographyPage({
   params,
 }: Readonly<ArtistDiscographyPageProps>) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  await requireSpotifyUserIdOrRedirect();
 
   const { artistId } = await params;
   const { artistName, albums } = await getArtistDiscography(artistId);
