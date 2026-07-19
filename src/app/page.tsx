@@ -16,7 +16,7 @@ const ICON_CLASS = "h-5 w-5 shrink-0 text-accent";
 const FEATURES = [
   {
     icon: <LuListPlus className={ICON_CLASS} />,
-    title: "Queue anything",
+    title: "Add anything to your list",
     description:
       "Search Spotify and add artists or albums you've been meaning to dig into — no pressure to start right away.",
   },
@@ -30,14 +30,14 @@ const FEATURES = [
     icon: <LuGauge className={ICON_CLASS} />,
     title: "Watch your progress",
     description:
-      "Every queued album gets a live progress bar, so you always know how much is left before it's complete.",
+      "Every album on your list gets a live progress bar, so you always know how much is left before it's complete.",
   },
 ];
 
 export default async function Home() {
   const session = await auth();
   if (session?.spotifyUserId) {
-    redirect("/queue");
+    redirect("/list");
   }
 
   return (
@@ -62,8 +62,8 @@ export default async function Home() {
             justify="center"
             className="max-w-md"
           >
-            Queue up artists and albums, then see when you actually got around
-            to listening to them.
+            Add artists and albums to your list, then see when you actually
+            got around to listening to them.
           </Text>
         </VStack>
 

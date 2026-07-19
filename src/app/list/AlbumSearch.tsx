@@ -3,7 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import {
   search,
-  queueAlbum,
+  addAlbum,
   type AlbumSearchResult,
   type ArtistSearchResult,
 } from "./actions";
@@ -21,10 +21,10 @@ export function AlbumSearch() {
   const [artists, setArtists] = useState<ArtistSearchResult[]>([]);
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [view, setView] = useState<"artist" | "album">("album");
-  const [queuedIds, setQueuedIds] = useState<Set<string>>(new Set());
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
-  const [isQueuing, startQueuing] = useTransition();
+  const [isAdding, startAdding] = useTransition();
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -40,11 +40,11 @@ export function AlbumSearch() {
     });
   }
 
-  function handleQueue(album: AlbumSearchResult) {
-    startQueuing(async () => {
+  function handleAdd(album: AlbumSearchResult) {
+    startAdding(async () => {
       try {
-        await queueAlbum(album);
-        setQueuedIds((prev) => new Set(prev).add(album.spotifyAlbumId));
+        await addAlbum(album);
+        setAddedIds((prev) => new Set(prev).add(album.spotifyAlbumId));
       } catch {
         setError("Couldn't add that album. Try again.");
       }
@@ -116,7 +116,7 @@ export function AlbumSearch() {
       {view === "album" && albums.length > 0 && (
         <VStack gap="sm">
           {albums.map((album) => {
-            const queued = queuedIds.has(album.spotifyAlbumId);
+            const added = addedIds.has(album.spotifyAlbumId);
             return (
               <AlbumRow
                 key={album.spotifyAlbumId}
@@ -124,11 +124,11 @@ export function AlbumSearch() {
                 artistHref={artistSearchHref(album.spotifyArtistId)}
                 endContent={
                   <Button
-                    label={queued ? "Queued" : "Queue"}
-                    variant={queued ? "secondary" : "primary"}
+                    label={added ? "Added" : "Add"}
+                    variant={added ? "secondary" : "primary"}
                     size="sm"
-                    isDisabled={queued || isQueuing}
-                    onClick={() => handleQueue(album)}
+                    isDisabled={added || isAdding}
+                    onClick={() => handleAdd(album)}
                   />
                 }
               />

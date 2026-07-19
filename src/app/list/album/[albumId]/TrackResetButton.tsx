@@ -4,7 +4,7 @@ import { LuRotateCcw } from "react-icons/lu";
 import { Icon } from "@/design/atoms/Icon";
 import { IconButton } from "@/design/atoms/IconButton";
 import { useImperativeAlertDialog } from "@/design/atoms/AlertDialog";
-import { resetTrackProgress } from "@/app/queue/actions";
+import { resetTrackProgress } from "@/app/list/actions";
 
 interface TrackResetButtonProps {
   spotifyAlbumId: string;

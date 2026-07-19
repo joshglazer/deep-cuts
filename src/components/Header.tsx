@@ -15,14 +15,14 @@ export async function Header() {
         <div className="sm:hidden">
           <HeaderMobileMenu brand={<Wordmark />} />
         </div>
-        <Wordmark href="/queue" />
+        <Wordmark href="/list" />
       </HStack>
       <HStack gap="lg" vAlign="center">
         <HStack gap="lg" vAlign="center" className="hidden sm:flex">
-          <Link href="/queue" isStandalone hasUnderline={false} color="primary">
-            My Queue
+          <Link href="/list" isStandalone hasUnderline={false} color="primary">
+            My List
           </Link>
-          <Button href="/queue/search" size="sm" label="Add to Queue" />
+          <Button href="/list/search" size="sm" label="Add to List" />
         </HStack>
         <UserMenu
           name={session?.user?.name}

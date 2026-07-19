@@ -5,7 +5,7 @@ export interface AlbumListenStats {
   lastPlayedAt?: string;
 }
 
-/** One query covers every queued album on the page, via the ListenEvent secondary index on spotifyUserId (sorted by spotifyAlbumId). */
+/** One query covers every album on the list page, via the ListenEvent secondary index on spotifyUserId (sorted by spotifyAlbumId). */
 export async function getListenStatsByAlbum(
   spotifyUserId: string
 ): Promise<Map<string, AlbumListenStats>> {

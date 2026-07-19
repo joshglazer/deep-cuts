@@ -2,29 +2,29 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
-import { AlbumRowActionMenu } from "@/app/queue/AlbumRowActionMenu";
-import { FilterPopover } from "@/app/queue/FilterPopover";
-import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
-import { albumHref, artistQueueHref, artistSearchHref } from "@/app/queue/routes";
+import { AlbumRowActionMenu } from "@/app/list/AlbumRowActionMenu";
+import { FilterPopover } from "@/app/list/FilterPopover";
+import { getListenStatsByAlbum } from "@/app/list/listenProgress";
+import { albumHref, artistListHref, artistSearchHref } from "@/app/list/routes";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
   parseAlbumSort,
   sortAlbums,
-} from "@/app/queue/sortAlbums";
+} from "@/app/list/sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
 
-interface ArtistQueuePageProps {
+interface ArtistListPageProps {
   params: Promise<{ artistId: string }>;
   searchParams: Promise<{ sort?: string; completed?: string }>;
 }
 
-export default async function ArtistQueuePage({
+export default async function ArtistListPage({
   params,
   searchParams,
-}: Readonly<ArtistQueuePageProps>) {
+}: Readonly<ArtistListPageProps>) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     redirect("/");
@@ -57,7 +57,7 @@ export default async function ArtistQueuePage({
   return (
     <PageShell
       title={artistName}
-      breadcrumbs={[{ label: "My Queue", href: "/queue" }, { label: artistName }]}
+      breadcrumbs={[{ label: "My List", href: "/list" }, { label: artistName }]}
       titleActions={
         <AddIconButton
           label={`Find more albums by ${artistName}`}
@@ -79,8 +79,8 @@ export default async function ArtistQueuePage({
     >
       {albums.length === 0 ? (
         <EmptyState
-          title="No albums queued for this artist"
-          description="Albums you queue for this artist will show up here."
+          title="No albums on your list for this artist"
+          description="Albums you add for this artist will show up here."
         />
       ) : hasNoVisibleAlbums ? (
         <EmptyState
@@ -88,7 +88,7 @@ export default async function ArtistQueuePage({
           description={
             showCompleted
               ? "Albums by this artist you've fully listened to will show up here."
-              : "Every queued album by this artist has been fully listened to. Turn on “Show completed” to see them."
+              : "Every album on your list by this artist has been fully listened to. Turn on “Show completed” to see them."
           }
         />
       ) : (
@@ -97,7 +97,7 @@ export default async function ArtistQueuePage({
             <AlbumRow
               key={album.id}
               album={album}
-              artistHref={artistQueueHref(artistId)}
+              artistHref={artistListHref(artistId)}
               href={albumHref(album.spotifyAlbumId)}
               progress={
                 album.totalTracks != null
@@ -116,7 +116,7 @@ export default async function ArtistQueuePage({
                   artistName={album.artistName}
                   spotifyAlbumId={album.spotifyAlbumId}
                   albumHref={albumHref(album.spotifyAlbumId)}
-                  artistHref={artistQueueHref(artistId)}
+                  artistHref={artistListHref(artistId)}
                   addMoreHref={artistSearchHref(artistId)}
                 />
               }

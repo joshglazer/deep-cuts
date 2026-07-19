@@ -42,7 +42,7 @@ export default function Image() {
               Deep Cuts
             </div>
             <div style={{ fontSize: 32, color: "#a1a1aa" }}>
-              Queue up albums, see when you actually listened
+              Add albums to your list, see when you actually listened
             </div>
           </div>
         </div>

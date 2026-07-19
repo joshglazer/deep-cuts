@@ -97,13 +97,13 @@ export async function getArtistDiscography(artistId: string): Promise<{
   };
 }
 
-export async function queueAlbum(album: AlbumSearchResult) {
+export async function addAlbum(album: AlbumSearchResult) {
   const session = await auth();
   if (!session?.spotifyUserId) {
     throw new Error("Not signed in");
   }
 
-  // No secondary index on spotifyUserId yet (see queue/page.tsx TODO), so
+  // No secondary index on spotifyUserId yet (see list/page.tsx TODO), so
   // this dedupe check is a full table scan like the rest of this page.
   const { data: existing } = await dataClient.models.Album.list({
     filter: {
@@ -120,11 +120,11 @@ export async function queueAlbum(album: AlbumSearchResult) {
     name: album.name,
     artistName: album.artistName,
     imageUrl: album.imageUrl,
-    queuedAt: new Date().toISOString(),
+    addedAt: new Date().toISOString(),
     totalTracks: album.totalTracks,
   });
 
-  revalidatePath("/queue");
+  revalidatePath("/list");
 }
 
 export async function removeAlbum(id: string) {
@@ -139,7 +139,7 @@ export async function removeAlbum(id: string) {
   }
 
   await dataClient.models.Album.delete({ id });
-  revalidatePath("/queue");
+  revalidatePath("/list");
 }
 
 export async function resetAlbumProgress(id: string) {
@@ -164,9 +164,9 @@ export async function resetAlbumProgress(id: string) {
     await dataClient.models.Album.update({ id: album.id, completedAt: null });
   }
 
-  revalidatePath("/queue");
-  revalidatePath(`/queue/artist/${album.spotifyArtistId}`);
-  revalidatePath(`/queue/album/${album.spotifyAlbumId}`);
+  revalidatePath("/list");
+  revalidatePath(`/list/artist/${album.spotifyArtistId}`);
+  revalidatePath(`/list/album/${album.spotifyAlbumId}`);
 }
 
 export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
@@ -187,7 +187,7 @@ export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId:
 
   // Dropping below totalTracks means the album is no longer fully played —
   // no secondary index on spotifyAlbumId alone, so this is a filtered scan
-  // like queueAlbum's dedupe check above.
+  // like addAlbum's dedupe check above.
   const { data: albums } = await dataClient.models.Album.list({
     filter: {
       spotifyUserId: { eq: session.spotifyUserId },
@@ -197,9 +197,9 @@ export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId:
   const album = albums[0];
   if (album?.completedAt) {
     await dataClient.models.Album.update({ id: album.id, completedAt: null });
-    revalidatePath(`/queue/artist/${album.spotifyArtistId}`);
+    revalidatePath(`/list/artist/${album.spotifyArtistId}`);
   }
 
-  revalidatePath(`/queue/album/${spotifyAlbumId}`);
-  revalidatePath("/queue");
+  revalidatePath(`/list/album/${spotifyAlbumId}`);
+  revalidatePath("/list");
 }

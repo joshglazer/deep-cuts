@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { PageShell } from "@/components/PageShell";
-import { getArtistDiscography } from "@/app/queue/actions";
+import { getArtistDiscography } from "@/app/list/actions";
 import { ArtistDiscography } from "./ArtistDiscography";
 
 interface ArtistDiscographyPageProps {
@@ -23,7 +23,7 @@ export default async function ArtistDiscographyPage({
     <PageShell
       title={artistName}
       breadcrumbs={[
-        { label: "Add to Queue", href: "/queue/search" },
+        { label: "Add to List", href: "/list/search" },
         { label: artistName },
       ]}
     >

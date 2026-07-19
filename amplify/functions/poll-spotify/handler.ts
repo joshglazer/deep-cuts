@@ -43,13 +43,13 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   const { items: recentlyPlayed } = await getRecentlyPlayed(refreshed.accessToken);
   if (recentlyPlayed.length === 0) return;
 
-  const { data: queuedAlbums, errors: albumErrors } = await client.models.Album.list({
+  const { data: listedAlbums, errors: albumErrors } = await client.models.Album.list({
     filter: { spotifyUserId: { eq: spotifyUserId } },
   });
   if (albumErrors) throw new Error(JSON.stringify(albumErrors));
 
-  const queuedAlbumsById = new Map(queuedAlbums.map((album) => [album.spotifyAlbumId, album]));
-  const matches = recentlyPlayed.filter((item) => queuedAlbumsById.has(item.track.album.id));
+  const listedAlbumsById = new Map(listedAlbums.map((album) => [album.spotifyAlbumId, album]));
+  const matches = recentlyPlayed.filter((item) => listedAlbumsById.has(item.track.album.id));
   if (matches.length === 0) return;
 
   // Spotify's recently-played endpoint only ever returns the last ~50
@@ -66,8 +66,8 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   );
 
   // Completion is only checked against albums touched by this poll (bounded
-  // by Spotify's ~50-item recently-played page, regardless of queue size),
-  // not every queued album — so this only needs played-track sets for that
+  // by Spotify's ~50-item recently-played page, regardless of list size),
+  // not every album on the list — so this only needs played-track sets for that
   // subset, seeded from history in case some of their tracks were played
   // outside this poll's window.
   const matchedAlbumIds = new Set(matches.map((item) => item.track.album.id));
@@ -102,7 +102,7 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   }
 
   for (const albumId of matchedAlbumIds) {
-    const album = queuedAlbumsById.get(albumId);
+    const album = listedAlbumsById.get(albumId);
     if (!album || album.completedAt || album.totalTracks == null) continue;
     const playedCount = playedTrackIdsByAlbum.get(albumId)?.size ?? 0;
     if (playedCount < album.totalTracks) continue;

@@ -27,7 +27,7 @@ export function ViewToggle({ view }: Readonly<ViewToggleProps>) {
     <SegmentedControl
       value={view}
       onChange={handleChange}
-      label="Queue view"
+      label="List view"
       options={[
         { value: "flat", label: "Albums" },
         { value: "artist", label: "Artists" },

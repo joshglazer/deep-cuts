@@ -1,7 +1,7 @@
 # Deep Cuts
 
-Queue up artists and albums to listen to on Spotify, then track whether you
-actually got around to them.
+Add artists and albums to your list to listen to on Spotify, then track
+whether you actually got around to them.
 
 ## Architecture
 
@@ -20,8 +20,8 @@ actually got around to them.
   token (the refresh token is persisted to the `SpotifyAuth` model on
   sign-in/refresh — see `src/auth.ts` — since the function runs with no user
   session of its own), polls their "recently played" history, and records
-  matches against their queue as `ListenEvent`s. Spotify has no push/webhook
-  API for this, so polling is the only option. The queue pages read those
+  matches against their list as `ListenEvent`s. Spotify has no push/webhook
+  API for this, so polling is the only option. The list pages read those
   `ListenEvent`s back to show a per-album progress bar ("x/y tracks") and
   per-track played checkmarks on the album's track list.
 
@@ -163,7 +163,7 @@ poll-spotify function) — and tear it down when the PR closes.
    branches only (Amplify console → Environment variables → scope to "All
    pull-request previews") — **never** set it on the production branch.
    This adds a "Preview sign-in" button on the homepage that creates a fake
-   session, so you can exercise the queue page (list, add, remove) against
+   session, so you can exercise the list page (list, add, remove) against
    that preview's own backend. It carries no real Spotify access token, so
    Spotify-backed features (album search) stay non-functional under it —
    use the real Spotify sign-in (step 4) when you need those.
@@ -286,16 +286,16 @@ notified than have it self-enforce.
 ## Status
 
 Built: Spotify OAuth sign-in, the DynamoDB data model, searching Spotify and
-queuing albums (including browsing an artist's full discography), the queue
-list (flat and grouped-by-artist views, with per-album listen-progress
-indicators), the per-track played view on an album's track list, and the
-poll-spotify handler itself (refresh-token persistence, matching
-recently-played tracks against the queue, writing `ListenEvent`s).
+adding albums to the list (including browsing an artist's full discography),
+the list itself (flat and grouped-by-artist views, with per-album
+listen-progress indicators), the per-track played view on an album's track
+list, and the poll-spotify handler itself (refresh-token persistence,
+matching recently-played tracks against the list, writing `ListenEvent`s).
 
-Left to build: queuing an *artist* directly (the `Artist` model and
-`/queue/artist/[artistId]` view exist, but nothing writes an `Artist` record
-today — only individual albums get queued, including ones found via an
-artist's discography page).
+Left to build: adding an *artist* directly (the `Artist` model and
+`/list/artist/[artistId]` view exist, but nothing writes an `Artist` record
+today — only individual albums get added to the list, including ones found
+via an artist's discography page).
 
 Listen tracking won't record anything in a given environment until its two
 Spotify secrets are set — see "Listen-tracking secrets (poll-spotify)" above
