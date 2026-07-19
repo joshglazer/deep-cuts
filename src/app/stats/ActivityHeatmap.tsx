@@ -48,8 +48,12 @@ export function ActivityHeatmap({ days }: Readonly<ActivityHeatmapProps>) {
     <Card>
       <VStack gap="sm">
         <Text type="supporting">Listening activity</Text>
-        <div className="overflow-x-auto">
-          <HStack gap="sm" className="w-fit">
+        {/* dir="rtl" on the scroll container plus dir="ltr" on its content is a
+            CSS-only way to make an overflowing box start scrolled to its right
+            edge — so the grid opens on today's column (the interesting one)
+            instead of the oldest, otherwise-empty end for a new user. */}
+        <div dir="rtl" className="overflow-x-auto">
+          <HStack dir="ltr" gap="sm" className="w-fit">
             {weeks.map((week, index) => (
               <VStack key={week[0].date} gap="sm" className="w-3">
                 <Text type="supporting" size="2xs" className="h-4 whitespace-nowrap">
