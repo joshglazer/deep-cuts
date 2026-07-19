@@ -8,14 +8,18 @@ import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
 import { Tooltip } from "../atoms/Tooltip";
 
-interface AlbumRowProps {
+interface AlbumRowAlbum {
   name: string;
   artistName: string;
-  artistHref?: string;
   imageUrl?: string | null;
   spotifyAlbumId?: string;
   releaseYear?: string;
-  totalTracks?: number;
+  totalTracks?: number | null;
+}
+
+interface AlbumRowProps {
+  album: AlbumRowAlbum;
+  artistHref?: string;
   href?: string;
   progress?: { played: number; total: number };
   completedAt?: string | null;
@@ -23,18 +27,14 @@ interface AlbumRowProps {
 }
 
 export function AlbumRow({
-  name,
-  artistName,
+  album,
   artistHref,
-  imageUrl,
-  spotifyAlbumId,
-  releaseYear,
-  totalTracks,
   href,
   progress,
   completedAt,
   endContent,
 }: Readonly<AlbumRowProps>) {
+  const { name, artistName, imageUrl, spotifyAlbumId, releaseYear, totalTracks } = album;
   const isCompleted = Boolean(completedAt);
   const showProgress = progress && (isCompleted || progress.played > 0);
   // Completed albums always render as fully played, even if a stale
@@ -115,9 +115,9 @@ export function AlbumRow({
                 </Text>
               </HStack>
             )}
-            {!progress && (releaseYear || totalTracks !== undefined) && (
+            {!progress && (releaseYear || totalTracks != null) && (
               <Text type="supporting" maxLines={1}>
-                {[releaseYear, totalTracks !== undefined ? `${totalTracks} tracks` : null]
+                {[releaseYear, totalTracks != null ? `${totalTracks} tracks` : null]
                   .filter(Boolean)
                   .join(" · ")}
               </Text>

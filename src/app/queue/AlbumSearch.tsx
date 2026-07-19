@@ -7,6 +7,7 @@ import {
   type AlbumSearchResult,
   type ArtistSearchResult,
 } from "./actions";
+import { artistSearchHref } from "./routes";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Banner } from "@/design/atoms/Banner";
@@ -106,7 +107,7 @@ export function AlbumSearch() {
               key={artist.spotifyArtistId}
               name={artist.name}
               imageUrl={artist.imageUrl}
-              href={`/queue/search/artist/${artist.spotifyArtistId}`}
+              href={artistSearchHref(artist.spotifyArtistId)}
             />
           ))}
         </VStack>
@@ -119,13 +120,8 @@ export function AlbumSearch() {
             return (
               <AlbumRow
                 key={album.spotifyAlbumId}
-                name={album.name}
-                artistName={album.artistName}
-                artistHref={`/queue/search/artist/${album.spotifyArtistId}`}
-                imageUrl={album.imageUrl}
-                spotifyAlbumId={album.spotifyAlbumId}
-                releaseYear={album.releaseYear}
-                totalTracks={album.totalTracks}
+                album={album}
+                artistHref={artistSearchHref(album.spotifyArtistId)}
                 endContent={
                   <Button
                     label={queued ? "Queued" : "Queue"}

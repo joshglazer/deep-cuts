@@ -6,6 +6,7 @@ import { PageShell } from "@/components/PageShell";
 import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
 import { FilterPopover } from "./FilterPopover";
 import { getListenStatsByAlbum } from "./listenProgress";
+import { albumHref, artistQueueHref, artistSearchHref } from "./routes";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
@@ -146,7 +147,7 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                   name={artist.name}
                   imageUrl={artist.imageUrl}
                   albumCount={artist.albumCount}
-                  href={`/queue/artist/${artist.spotifyArtistId}`}
+                  href={artistQueueHref(artist.spotifyArtistId)}
                 />
               ))}
             </VStack>
@@ -155,12 +156,9 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
               {sortedAlbums.map((album) => (
                 <AlbumRow
                   key={album.id}
-                  name={album.name}
-                  artistName={album.artistName}
-                  artistHref={`/queue/artist/${album.spotifyArtistId}`}
-                  imageUrl={album.imageUrl}
-                  spotifyAlbumId={album.spotifyAlbumId}
-                  href={`/queue/album/${album.spotifyAlbumId}`}
+                  album={album}
+                  artistHref={artistQueueHref(album.spotifyArtistId)}
+                  href={albumHref(album.spotifyAlbumId)}
                   progress={
                     album.totalTracks != null
                       ? {
@@ -177,9 +175,9 @@ export default async function QueuePage({ searchParams }: Readonly<QueuePageProp
                       albumName={album.name}
                       artistName={album.artistName}
                       spotifyAlbumId={album.spotifyAlbumId}
-                      albumHref={`/queue/album/${album.spotifyAlbumId}`}
-                      artistHref={`/queue/artist/${album.spotifyArtistId}`}
-                      addMoreHref={`/queue/search/artist/${album.spotifyArtistId}`}
+                      albumHref={albumHref(album.spotifyAlbumId)}
+                      artistHref={artistQueueHref(album.spotifyArtistId)}
+                      addMoreHref={artistSearchHref(album.spotifyArtistId)}
                     />
                   }
                 />
