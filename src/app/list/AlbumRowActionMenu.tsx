@@ -10,31 +10,23 @@ import {
   LuTrash2,
   LuUser,
 } from "react-icons/lu";
+import type { Schema } from "../../../amplify/data/resource";
 import { spotifyAlbumUri } from "@/lib/spotifyLinks";
 import { Icon } from "@/design/atoms/Icon";
 import { MoreMenu } from "@/design/atoms/MoreMenu";
 import { useImperativeAlertDialog } from "@/design/atoms/AlertDialog";
 import { removeAlbum, resetAlbumProgress } from "./actions";
+import { albumHref, artistListHref, artistSearchHref } from "./routes";
 
 interface AlbumRowActionMenuProps {
-  albumId: string;
-  albumName: string;
-  artistName: string;
-  spotifyAlbumId: string;
-  albumHref: string;
-  artistHref: string;
-  addMoreHref: string;
+  album: Pick<
+    Schema["Album"]["type"],
+    "id" | "name" | "artistName" | "spotifyAlbumId" | "spotifyArtistId"
+  >;
 }
 
-export function AlbumRowActionMenu({
-  albumId,
-  albumName,
-  artistName,
-  spotifyAlbumId,
-  albumHref,
-  artistHref,
-  addMoreHref,
-}: Readonly<AlbumRowActionMenuProps>) {
+export function AlbumRowActionMenu({ album }: Readonly<AlbumRowActionMenuProps>) {
+  const { id, name, artistName, spotifyAlbumId, spotifyArtistId } = album;
   const router = useRouter();
   const removeDialog = useImperativeAlertDialog();
   const resetDialog = useImperativeAlertDialog();
@@ -42,7 +34,7 @@ export function AlbumRowActionMenu({
   return (
     <>
       <MoreMenu
-        label={`${albumName} actions`}
+        label={`${name} actions`}
         icon={<Icon icon={LuEllipsisVertical} size="sm" />}
         items={[
           {
@@ -50,9 +42,21 @@ export function AlbumRowActionMenu({
             icon: LuPlay,
             onClick: () => window.open(spotifyAlbumUri(spotifyAlbumId), "_blank"),
           },
-          { label: "Progress", icon: LuListChecks, onClick: () => router.push(albumHref) },
-          { label: "Artist Albums", icon: LuUser, onClick: () => router.push(artistHref) },
-          { label: "Add More", icon: LuPlus, onClick: () => router.push(addMoreHref) },
+          {
+            label: "Progress",
+            icon: LuListChecks,
+            onClick: () => router.push(albumHref(spotifyAlbumId)),
+          },
+          {
+            label: "Artist Albums",
+            icon: LuUser,
+            onClick: () => router.push(artistListHref(spotifyArtistId)),
+          },
+          {
+            label: "Add More",
+            icon: LuPlus,
+            onClick: () => router.push(artistSearchHref(spotifyArtistId)),
+          },
           { type: "divider" },
           {
             label: "Reset Progress",
@@ -60,10 +64,10 @@ export function AlbumRowActionMenu({
             onClick: () =>
               resetDialog.show({
                 title: "Reset progress?",
-                description: `Mark every track on "${albumName}" by ${artistName} as unplayed?`,
+                description: `Mark every track on "${name}" by ${artistName} as unplayed?`,
                 actionLabel: "Reset",
                 onAction: async () => {
-                  await resetAlbumProgress(albumId);
+                  await resetAlbumProgress(id);
                   resetDialog.hide();
                 },
               }),
@@ -74,10 +78,10 @@ export function AlbumRowActionMenu({
             onClick: () =>
               removeDialog.show({
                 title: "Remove from list?",
-                description: `Remove "${albumName}" by ${artistName} from your list?`,
+                description: `Remove "${name}" by ${artistName} from your list?`,
                 actionLabel: "Remove",
                 onAction: async () => {
-                  await removeAlbum(albumId);
+                  await removeAlbum(id);
                   removeDialog.hide();
                 },
               }),

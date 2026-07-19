@@ -1,7 +1,7 @@
 import type { Schema } from "../../../amplify/data/resource";
 import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
 import type { AlbumListenStats } from "./listenProgress";
-import { albumHref, artistListHref, artistSearchHref } from "./routes";
+import { albumHref, artistListHref } from "./routes";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { VStack } from "@/design/atoms/Stack";
 
@@ -46,17 +46,7 @@ export function AlbumList({ albums, listenStatsByAlbum }: Readonly<AlbumListProp
               : undefined
           }
           completedAt={album.completedAt}
-          endContent={
-            <AlbumRowActionMenu
-              albumId={album.id}
-              albumName={album.name}
-              artistName={album.artistName}
-              spotifyAlbumId={album.spotifyAlbumId}
-              albumHref={albumHref(album.spotifyAlbumId)}
-              artistHref={artistListHref(album.spotifyArtistId)}
-              addMoreHref={artistSearchHref(album.spotifyArtistId)}
-            />
-          }
+          endContent={<AlbumRowActionMenu album={album} />}
         />
       ))}
     </VStack>
