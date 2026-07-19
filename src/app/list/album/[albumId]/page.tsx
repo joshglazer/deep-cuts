@@ -1,9 +1,10 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { formatDate } from "@/lib/formatDate";
 import { getAlbum } from "@/lib/spotify";
+import { spotifyAlbumUri } from "@/lib/spotifyLinks";
 import { getPlayedTrackDates } from "@/app/list/listenProgress";
+import { artistListHref, artistSearchHref } from "@/app/list/routes";
 import { TrackResetButton } from "./TrackResetButton";
 import { PageShell } from "@/components/PageShell";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
@@ -28,19 +29,16 @@ interface AlbumTracksPageProps {
 }
 
 export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPageProps>) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrRedirect();
 
   const { albumId } = await params;
 
   const [album, playedTrackDates, { data: listedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
-    getPlayedTrackDates(session.spotifyUserId, albumId),
+    getPlayedTrackDates(spotifyUserId, albumId),
     dataClient.models.Album.list({
       filter: {
-        spotifyUserId: { eq: session.spotifyUserId },
+        spotifyUserId: { eq: spotifyUserId },
         spotifyAlbumId: { eq: albumId },
       },
     }),
@@ -60,7 +58,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
           ? [
               {
                 label: primaryArtist.name,
-                href: `/list/artist/${primaryArtist.id}`,
+                href: artistListHref(primaryArtist.id),
               },
             ]
           : []),
@@ -79,7 +77,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
               <AspectRatio ratio={1}>
                 {album.images[0] && (
                   <Link
-                    href={`spotify:album:${albumId}`}
+                    href={spotifyAlbumUri(albumId)}
                     target="_blank"
                     isStandalone
                     hasUnderline={false}
@@ -98,7 +96,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
               {primaryArtist ? (
                 <HStack gap="sm" vAlign="center">
                   <Link
-                    href={`/list/artist/${primaryArtist.id}`}
+                    href={artistListHref(primaryArtist.id)}
                     isStandalone
                     color="secondary"
                   >
@@ -106,7 +104,7 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
                   </Link>
                   <AddIconButton
                     label={`Find more albums by ${primaryArtist.name}`}
-                    href={`/list/search/artist/${primaryArtist.id}`}
+                    href={artistSearchHref(primaryArtist.id)}
                   />
                 </HStack>
               ) : (

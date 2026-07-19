@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
+import { albumHref, artistListHref } from "./routes";
 import {
   search as searchSpotify,
   getArtists,
@@ -42,10 +43,7 @@ export async function search(query: string): Promise<{
   artists: ArtistSearchResult[];
   albums: AlbumSearchResult[];
 }> {
-  const session = await auth();
-  if (!session?.user) {
-    throw new Error("Not signed in");
-  }
+  await requireSignedIn();
   if (!query.trim()) return { artists: [], albums: [] };
 
   const { artists, albums } = await searchSpotify(query);
@@ -64,10 +62,7 @@ export async function getArtistDiscography(artistId: string): Promise<{
   imageUrl?: string;
   albums: AlbumSearchResult[];
 }> {
-  const session = await auth();
-  if (!session?.user) {
-    throw new Error("Not signed in");
-  }
+  await requireSignedIn();
 
   const [{ artists }, spotifyAlbums] = await Promise.all([
     getArtists([artistId]),
@@ -98,23 +93,20 @@ export async function getArtistDiscography(artistId: string): Promise<{
 }
 
 export async function addAlbum(album: AlbumSearchResult) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    throw new Error("Not signed in");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
   // No secondary index on spotifyUserId yet (see list/page.tsx TODO), so
   // this dedupe check is a full table scan like the rest of this page.
   const { data: existing } = await dataClient.models.Album.list({
     filter: {
-      spotifyUserId: { eq: session.spotifyUserId },
+      spotifyUserId: { eq: spotifyUserId },
       spotifyAlbumId: { eq: album.spotifyAlbumId },
     },
   });
   if (existing.length > 0) return;
 
   await dataClient.models.Album.create({
-    spotifyUserId: session.spotifyUserId,
+    spotifyUserId,
     spotifyAlbumId: album.spotifyAlbumId,
     spotifyArtistId: album.spotifyArtistId,
     name: album.name,
@@ -128,13 +120,10 @@ export async function addAlbum(album: AlbumSearchResult) {
 }
 
 export async function removeAlbum(id: string) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    throw new Error("Not signed in");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
   const { data: album } = await dataClient.models.Album.get({ id });
-  if (!album || album.spotifyUserId !== session.spotifyUserId) {
+  if (!album || album.spotifyUserId !== spotifyUserId) {
     return;
   }
 
@@ -142,64 +131,77 @@ export async function removeAlbum(id: string) {
   revalidatePath("/list");
 }
 
-export async function resetAlbumProgress(id: string) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    throw new Error("Not signed in");
+/**
+ * Deletes this user's listen events for an album, optionally narrowed to a
+ * single track. Returns the number removed so callers can bail out when
+ * there was nothing to reset.
+ */
+async function deleteListenEvents(
+  spotifyUserId: string,
+  spotifyAlbumId: string,
+  spotifyTrackId?: string
+): Promise<number> {
+  const { data: events } =
+    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
+      spotifyAlbumId: { eq: spotifyAlbumId },
+    });
+  const matches = spotifyTrackId
+    ? events.filter((event) => event.spotifyTrackId === spotifyTrackId)
+    : events;
+
+  await Promise.all(matches.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+  return matches.length;
+}
+
+// Every surface showing this album's progress: the list page, the artist's
+// page (progress bar and completed badge), and the album's own track list.
+// The artist path is skipped only when the album isn't on the user's list,
+// so there's no artist id to build it from.
+function revalidateAlbumPaths(spotifyAlbumId: string, spotifyArtistId?: string) {
+  revalidatePath("/list");
+  revalidatePath(albumHref(spotifyAlbumId));
+  if (spotifyArtistId) {
+    revalidatePath(artistListHref(spotifyArtistId));
   }
+}
+
+export async function resetAlbumProgress(id: string) {
+  const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
   const { data: album } = await dataClient.models.Album.get({ id });
-  if (!album || album.spotifyUserId !== session.spotifyUserId) {
+  if (!album || album.spotifyUserId !== spotifyUserId) {
     return;
   }
 
-  const { data: events } =
-    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId: session.spotifyUserId,
-      spotifyAlbumId: { eq: album.spotifyAlbumId },
-    });
-  await Promise.all(events.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+  await deleteListenEvents(spotifyUserId, album.spotifyAlbumId);
 
   if (album.completedAt) {
     await dataClient.models.Album.update({ id: album.id, completedAt: null });
   }
 
-  revalidatePath("/list");
-  revalidatePath(`/list/artist/${album.spotifyArtistId}`);
-  revalidatePath(`/list/album/${album.spotifyAlbumId}`);
+  revalidateAlbumPaths(album.spotifyAlbumId, album.spotifyArtistId);
 }
 
 export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    throw new Error("Not signed in");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  const { data: events } =
-    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId: session.spotifyUserId,
-      spotifyAlbumId: { eq: spotifyAlbumId },
-    });
-  const matches = events.filter((event) => event.spotifyTrackId === spotifyTrackId);
-  if (matches.length === 0) return;
-
-  await Promise.all(matches.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+  const deleted = await deleteListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
+  if (deleted === 0) return;
 
   // Dropping below totalTracks means the album is no longer fully played —
   // no secondary index on spotifyAlbumId alone, so this is a filtered scan
   // like addAlbum's dedupe check above.
   const { data: albums } = await dataClient.models.Album.list({
     filter: {
-      spotifyUserId: { eq: session.spotifyUserId },
+      spotifyUserId: { eq: spotifyUserId },
       spotifyAlbumId: { eq: spotifyAlbumId },
     },
   });
   const album = albums[0];
   if (album?.completedAt) {
     await dataClient.models.Album.update({ id: album.id, completedAt: null });
-    revalidatePath(`/list/artist/${album.spotifyArtistId}`);
   }
 
-  revalidatePath(`/list/album/${spotifyAlbumId}`);
-  revalidatePath("/list");
+  revalidateAlbumPaths(spotifyAlbumId, album?.spotifyArtistId);
 }

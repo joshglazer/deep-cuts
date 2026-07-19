@@ -45,6 +45,32 @@ async function spotifyFetch<T>(url: string, accessToken: string): Promise<T> {
   }
 }
 
+/**
+ * POSTs to Spotify's token endpoint with the app's client credentials as an
+ * HTTP Basic header. `context` only shapes the error message, so a failure
+ * says which flow it came from (client-credentials vs. refresh).
+ */
+async function postSpotifyToken<T>(body: URLSearchParams, context: string): Promise<T> {
+  const clientId = process.env.AUTH_SPOTIFY_ID;
+  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
+  if (!clientId || !clientSecret) {
+    throw new Error(`Missing AUTH_SPOTIFY_ID/AUTH_SPOTIFY_SECRET for ${context}`);
+  }
+
+  const res = await fetch(SPOTIFY_TOKEN_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+    },
+    body: body.toString(),
+  });
+  if (!res.ok) {
+    throw new Error(`Spotify ${context} error ${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
+
 let cachedAppToken: { token: string; expiresAt: number } | null = null;
 
 // Search and artist lookups are app-level Spotify data, not tied to any one
@@ -58,27 +84,10 @@ async function getAppAccessToken(): Promise<string> {
     return cachedAppToken.token;
   }
 
-  const clientId = process.env.AUTH_SPOTIFY_ID;
-  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error(
-      "Missing AUTH_SPOTIFY_ID/AUTH_SPOTIFY_SECRET for Spotify client-credentials auth"
-    );
-  }
-
-  const res = await fetch(SPOTIFY_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-    },
-    body: "grant_type=client_credentials",
-  });
-  if (!res.ok) {
-    throw new Error(`Spotify token error ${res.status}: ${await res.text()}`);
-  }
-
-  const data = (await res.json()) as { access_token: string; expires_in: number };
+  const data = await postSpotifyToken<{ access_token: string; expires_in: number }>(
+    new URLSearchParams({ grant_type: "client_credentials" }),
+    "client-credentials auth"
+  );
   // Refresh a bit early so a request never races an about-to-expire token.
   cachedAppToken = {
     token: data.access_token,
@@ -113,34 +122,17 @@ export interface RefreshedToken {
  * back to the input token rather than treating it as required.
  */
 export async function refreshAccessToken(refreshToken: string): Promise<RefreshedToken> {
-  const clientId = process.env.AUTH_SPOTIFY_ID;
-  const clientSecret = process.env.AUTH_SPOTIFY_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error(
-      "Missing AUTH_SPOTIFY_ID/AUTH_SPOTIFY_SECRET for Spotify token refresh"
-    );
-  }
-
-  const res = await fetch(SPOTIFY_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
-    },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }).toString(),
-  });
-  if (!res.ok) {
-    throw new Error(`Spotify token refresh error ${res.status}: ${await res.text()}`);
-  }
-
-  const data = (await res.json()) as {
+  const data = await postSpotifyToken<{
     access_token: string;
     refresh_token?: string;
     expires_in: number;
-  };
+  }>(
+    new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+    }),
+    "token refresh"
+  );
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? refreshToken,

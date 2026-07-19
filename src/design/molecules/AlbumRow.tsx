@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatDate } from "@/lib/formatDate";
+import { spotifyAlbumUri } from "@/lib/spotifyLinks";
 import { HStack, StackItem, VStack } from "../atoms/Stack";
 import { Icon } from "../atoms/Icon";
 import { Link } from "../atoms/Link";
@@ -56,7 +57,7 @@ export function AlbumRow({
       <HStack gap="sm" vAlign="center">
         {spotifyAlbumId ? (
           <Link
-            href={`spotify:album:${spotifyAlbumId}`}
+            href={spotifyAlbumUri(spotifyAlbumId)}
             target="_blank"
             isStandalone
             hasUnderline={false}

@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireSpotifyUserIdOrRedirect } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
@@ -18,10 +17,7 @@ interface ListPageProps {
 }
 
 export default async function ListPage({ searchParams }: Readonly<ListPageProps>) {
-  const session = await auth();
-  if (!session?.spotifyUserId) {
-    redirect("/");
-  }
+  const spotifyUserId = await requireSpotifyUserIdOrRedirect();
 
   const { view: viewParam, sort: sortParam, completed: completedParam } = await searchParams;
   const view = viewParam === "artist" ? "artist" : "flat";
@@ -33,9 +29,9 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
   // adding artists (album search/add already lives at /list/search).
   const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Album.list({
-      filter: { spotifyUserId: { eq: session.spotifyUserId } },
+      filter: { spotifyUserId: { eq: spotifyUserId } },
     }),
-    getListenStatsByAlbum(session.spotifyUserId),
+    getListenStatsByAlbum(spotifyUserId),
   ]);
 
   const hasCompletedAlbums = albums.some((album) => album.completedAt);

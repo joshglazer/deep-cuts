@@ -20,7 +20,7 @@ export async function Footer() {
           Listening activity may be delayed up to 15 minutes.
         </Text>
       )}
-      <div className="flex items-center justify-between border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
+      <div className="flex items-center justify-between border-t border-border px-6 py-4">
         <Text type="supporting" size="sm">
           A{" "}
           <Link
@@ -34,7 +34,7 @@ export async function Footer() {
           project
         </Text>
         <HStack gap="sm" vAlign="center">
-          <SiGithub className="h-3 w-3 shrink-0 fill-current text-zinc-500 dark:text-zinc-400" />
+          <SiGithub className="h-3 w-3 shrink-0 fill-current text-secondary" />
           <Link
             href="https://github.com/joshglazer/deep-cuts"
             target="_blank"
