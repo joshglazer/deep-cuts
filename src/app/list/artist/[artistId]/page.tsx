@@ -2,19 +2,17 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
-import { AlbumRowActionMenu } from "@/app/list/AlbumRowActionMenu";
+import { AlbumList } from "@/app/list/AlbumList";
 import { FilterPopover } from "@/app/list/FilterPopover";
 import { getListenStatsByAlbum } from "@/app/list/listenProgress";
-import { albumHref, artistListHref, artistSearchHref } from "@/app/list/routes";
+import { artistSearchHref } from "@/app/list/routes";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
   parseAlbumSort,
   sortAlbums,
 } from "@/app/list/sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
-import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { EmptyState } from "@/design/atoms/EmptyState";
-import { VStack } from "@/design/atoms/Stack";
 
 interface ArtistListPageProps {
   params: Promise<{ artistId: string }>;
@@ -92,37 +90,7 @@ export default async function ArtistListPage({
           }
         />
       ) : (
-        <VStack gap="sm">
-          {sortedAlbums.map((album) => (
-            <AlbumRow
-              key={album.id}
-              album={album}
-              artistHref={artistListHref(artistId)}
-              href={albumHref(album.spotifyAlbumId)}
-              progress={
-                album.totalTracks != null
-                  ? {
-                      played:
-                        listenStatsByAlbum.get(album.spotifyAlbumId)?.playedTrackIds.size ?? 0,
-                      total: album.totalTracks,
-                    }
-                  : undefined
-              }
-              completedAt={album.completedAt}
-              endContent={
-                <AlbumRowActionMenu
-                  albumId={album.id}
-                  albumName={album.name}
-                  artistName={album.artistName}
-                  spotifyAlbumId={album.spotifyAlbumId}
-                  albumHref={albumHref(album.spotifyAlbumId)}
-                  artistHref={artistListHref(artistId)}
-                  addMoreHref={artistSearchHref(artistId)}
-                />
-              }
-            />
-          ))}
-        </VStack>
+        <AlbumList albums={sortedAlbums} listenStatsByAlbum={listenStatsByAlbum} />
       )}
     </PageShell>
   );

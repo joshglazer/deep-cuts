@@ -3,17 +3,15 @@ import { auth } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
-import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
+import { AlbumList } from "./AlbumList";
 import { FilterPopover } from "./FilterPopover";
 import { getListenStatsByAlbum } from "./listenProgress";
-import { albumHref, artistListHref, artistSearchHref } from "./routes";
+import { artistListHref } from "./routes";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
-import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { EmptyState } from "@/design/atoms/EmptyState";
 import { VStack } from "@/design/atoms/Stack";
-import { Text } from "@/design/atoms/Text";
 
 interface ListPageProps {
   searchParams: Promise<{ view?: string; sort?: string; completed?: string }>;
@@ -33,23 +31,18 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
   // TODO (backend build-out): add a secondary index on spotifyUserId so this
   // scales past a full table scan, and add UI for searching Spotify and
   // adding artists (album search/add already lives at /list/search).
-  const [{ data: artists }, { data: albums }, listenStatsByAlbum] = await Promise.all([
-    dataClient.models.Artist.list({
-      filter: { spotifyUserId: { eq: session.spotifyUserId } },
-    }),
+  const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
     dataClient.models.Album.list({
       filter: { spotifyUserId: { eq: session.spotifyUserId } },
     }),
     getListenStatsByAlbum(session.spotifyUserId),
   ]);
 
-  const isEmpty = artists.length === 0 && albums.length === 0;
   const hasCompletedAlbums = albums.some((album) => album.completedAt);
   const visibleAlbums = albums.filter((album) =>
     showCompleted ? album.completedAt : !album.completedAt
   );
-  const hasNoVisibleAlbums =
-    !isEmpty && artists.length === 0 && albums.length > 0 && visibleAlbums.length === 0;
+  const hasNoVisibleAlbums = albums.length > 0 && visibleAlbums.length === 0;
 
   const sortedAlbums = sortAlbums(visibleAlbums, sort, listenStatsByAlbum);
 
@@ -119,7 +112,7 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
         )
       }
     >
-      {isEmpty ? (
+      {albums.length === 0 ? (
         <EmptyState
           title="Nothing on your list yet"
           description="Search and add an artist or album to get started."
@@ -133,58 +126,20 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
               : "Every album on your list has been fully listened to. Turn on “Show completed” to see them."
           }
         />
-      ) : (
-        <VStack gap="md">
-          {artists.map((artist) => (
-            <Text key={artist.id}>{artist.name} (artist)</Text>
+      ) : view === "artist" ? (
+        <VStack gap="sm">
+          {artistGroups.map((artist) => (
+            <ArtistRow
+              key={artist.spotifyArtistId}
+              name={artist.name}
+              imageUrl={artist.imageUrl}
+              albumCount={artist.albumCount}
+              href={artistListHref(artist.spotifyArtistId)}
+            />
           ))}
-
-          {view === "artist" ? (
-            <VStack gap="sm">
-              {artistGroups.map((artist) => (
-                <ArtistRow
-                  key={artist.spotifyArtistId}
-                  name={artist.name}
-                  imageUrl={artist.imageUrl}
-                  albumCount={artist.albumCount}
-                  href={artistListHref(artist.spotifyArtistId)}
-                />
-              ))}
-            </VStack>
-          ) : (
-            <VStack gap="sm">
-              {sortedAlbums.map((album) => (
-                <AlbumRow
-                  key={album.id}
-                  album={album}
-                  artistHref={artistListHref(album.spotifyArtistId)}
-                  href={albumHref(album.spotifyAlbumId)}
-                  progress={
-                    album.totalTracks != null
-                      ? {
-                          played:
-                            listenStatsByAlbum.get(album.spotifyAlbumId)?.playedTrackIds.size ?? 0,
-                          total: album.totalTracks,
-                        }
-                      : undefined
-                  }
-                  completedAt={album.completedAt}
-                  endContent={
-                    <AlbumRowActionMenu
-                      albumId={album.id}
-                      albumName={album.name}
-                      artistName={album.artistName}
-                      spotifyAlbumId={album.spotifyAlbumId}
-                      albumHref={albumHref(album.spotifyAlbumId)}
-                      artistHref={artistListHref(album.spotifyArtistId)}
-                      addMoreHref={artistSearchHref(album.spotifyArtistId)}
-                    />
-                  }
-                />
-              ))}
-            </VStack>
-          )}
         </VStack>
+      ) : (
+        <AlbumList albums={sortedAlbums} listenStatsByAlbum={listenStatsByAlbum} />
       )}
     </PageShell>
   );
