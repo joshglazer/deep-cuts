@@ -3,12 +3,12 @@
 import { useState, useTransition, type FormEvent } from "react";
 import {
   search,
-  addAlbum,
   type AlbumSearchResult,
   type ArtistSearchResult,
 } from "./actions";
+import { AddableAlbumList } from "./AddableAlbumList";
 import { artistSearchHref } from "./routes";
-import { AlbumRow } from "@/design/molecules/AlbumRow";
+import { useAddAlbum } from "./useAddAlbum";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Banner } from "@/design/atoms/Banner";
 import { Button } from "@/design/atoms/Button";
@@ -21,10 +21,8 @@ export function AlbumSearch() {
   const [artists, setArtists] = useState<ArtistSearchResult[]>([]);
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [view, setView] = useState<"artist" | "album">("album");
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
-  const [isAdding, startAdding] = useTransition();
+  const { addedIds, isAdding, add, error, setError } = useAddAlbum();
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
@@ -36,17 +34,6 @@ export function AlbumSearch() {
         setAlbums(result.albums);
       } catch {
         setError("Couldn't search Spotify. Try again.");
-      }
-    });
-  }
-
-  function handleAdd(album: AlbumSearchResult) {
-    startAdding(async () => {
-      try {
-        await addAlbum(album);
-        setAddedIds((prev) => new Set(prev).add(album.spotifyAlbumId));
-      } catch {
-        setError("Couldn't add that album. Try again.");
       }
     });
   }
@@ -114,27 +101,12 @@ export function AlbumSearch() {
       )}
 
       {view === "album" && albums.length > 0 && (
-        <VStack gap="sm">
-          {albums.map((album) => {
-            const added = addedIds.has(album.spotifyAlbumId);
-            return (
-              <AlbumRow
-                key={album.spotifyAlbumId}
-                album={album}
-                artistHref={artistSearchHref(album.spotifyArtistId)}
-                endContent={
-                  <Button
-                    label={added ? "Added" : "Add"}
-                    variant={added ? "secondary" : "primary"}
-                    size="sm"
-                    isDisabled={added || isAdding}
-                    onClick={() => handleAdd(album)}
-                  />
-                }
-              />
-            );
-          })}
-        </VStack>
+        <AddableAlbumList
+          albums={albums}
+          addedIds={addedIds}
+          isAdding={isAdding}
+          onAdd={add}
+        />
       )}
     </VStack>
   );

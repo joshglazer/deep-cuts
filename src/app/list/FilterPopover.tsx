@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { LuListFilter } from "react-icons/lu";
 import { CompletedToggle } from "./CompletedToggle";
 import { SortSelect } from "./SortSelect";
@@ -12,6 +13,24 @@ import { IconButton } from "@/design/atoms/IconButton";
 import { Popover } from "@/design/atoms/Popover";
 import { HStack, StackItem, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
+
+interface FilterRowProps {
+  label: string;
+  children: ReactNode;
+}
+
+// The label sits outside the control, in a fixed-width column, so the
+// controls line up with each other across rows.
+function FilterRow({ label, children }: Readonly<FilterRowProps>) {
+  return (
+    <HStack gap="sm" vAlign="center">
+      <Text type="label" as="label" textWrap="nowrap" className="w-20 shrink-0">
+        {label}
+      </Text>
+      {children}
+    </HStack>
+  );
+}
 
 interface FilterPopoverProps {
   view?: "flat" | "artist";
@@ -39,22 +58,16 @@ export function FilterPopover({
           <Heading level={4}>Filter & sort</Heading>
           <Divider />
           {view && (
-            <HStack gap="sm" vAlign="center">
-              <Text type="label" as="label" textWrap="nowrap" className="w-20 shrink-0">
-                Group by
-              </Text>
+            <FilterRow label="Group by">
               <ViewToggle view={view} />
-            </HStack>
+            </FilterRow>
           )}
           {(view === undefined || view === "flat") && (
-            <HStack gap="sm" vAlign="center">
-              <Text type="label" as="label" textWrap="nowrap" className="w-20 shrink-0">
-                Sort by
-              </Text>
+            <FilterRow label="Sort by">
               <StackItem size="fill">
                 <SortSelect sort={sort} options={sortOptions} />
               </StackItem>
-            </HStack>
+            </FilterRow>
           )}
           {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
         </VStack>
