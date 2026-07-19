@@ -1,19 +1,27 @@
+import type { Schema } from "../../../amplify/data/resource";
 import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
 import type { AlbumListenStats } from "./listenProgress";
 import { albumHref, artistListHref, artistSearchHref } from "./routes";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { VStack } from "@/design/atoms/Stack";
 
-interface ListedAlbum {
-  id: string;
-  name: string;
-  artistName: string;
-  imageUrl?: string | null;
-  spotifyAlbumId: string;
-  spotifyArtistId: string;
-  totalTracks?: number | null;
-  completedAt?: string | null;
-}
+/**
+ * Derived from the generated model rather than restated by hand, so renaming
+ * a field in amplify/data/resource.ts fails the build here instead of
+ * silently degrading — the optional-field version of this type still accepted
+ * rows that had lost a field, so a rename rendered every album as incomplete.
+ */
+type ListedAlbum = Pick<
+  Schema["Album"]["type"],
+  | "id"
+  | "name"
+  | "artistName"
+  | "imageUrl"
+  | "spotifyAlbumId"
+  | "spotifyArtistId"
+  | "totalTracks"
+  | "completedAt"
+>;
 
 interface AlbumListProps {
   albums: ListedAlbum[];
