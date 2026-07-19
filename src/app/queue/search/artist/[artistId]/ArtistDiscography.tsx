@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { queueAlbum, type AlbumSearchResult } from "@/app/queue/actions";
+import { artistSearchHref } from "@/app/queue/routes";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { Banner } from "@/design/atoms/Banner";
 import { Button } from "@/design/atoms/Button";
@@ -54,13 +55,8 @@ export function ArtistDiscography({ albums }: Readonly<ArtistDiscographyProps>) 
           return (
             <AlbumRow
               key={album.spotifyAlbumId}
-              name={album.name}
-              artistName={album.artistName}
-              artistHref={`/queue/search/artist/${album.spotifyArtistId}`}
-              imageUrl={album.imageUrl}
-              spotifyAlbumId={album.spotifyAlbumId}
-              releaseYear={album.releaseYear}
-              totalTracks={album.totalTracks}
+              album={album}
+              artistHref={artistSearchHref(album.spotifyArtistId)}
               endContent={
                 <Button
                   label={queued ? "Queued" : "Queue"}

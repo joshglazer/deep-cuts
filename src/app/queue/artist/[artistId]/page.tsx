@@ -5,6 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { AlbumRowActionMenu } from "@/app/queue/AlbumRowActionMenu";
 import { FilterPopover } from "@/app/queue/FilterPopover";
 import { getListenStatsByAlbum } from "@/app/queue/listenProgress";
+import { albumHref, artistQueueHref, artistSearchHref } from "@/app/queue/routes";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
   parseAlbumSort,
@@ -60,7 +61,7 @@ export default async function ArtistQueuePage({
       titleActions={
         <AddIconButton
           label={`Find more albums by ${artistName}`}
-          href={`/queue/search/artist/${artistId}`}
+          href={artistSearchHref(artistId)}
           variant="secondary"
           className="translate-y-[2px]"
         />
@@ -95,12 +96,9 @@ export default async function ArtistQueuePage({
           {sortedAlbums.map((album) => (
             <AlbumRow
               key={album.id}
-              name={album.name}
-              artistName={album.artistName}
-              artistHref={`/queue/artist/${artistId}`}
-              imageUrl={album.imageUrl}
-              spotifyAlbumId={album.spotifyAlbumId}
-              href={`/queue/album/${album.spotifyAlbumId}`}
+              album={album}
+              artistHref={artistQueueHref(artistId)}
+              href={albumHref(album.spotifyAlbumId)}
               progress={
                 album.totalTracks != null
                   ? {
@@ -117,9 +115,9 @@ export default async function ArtistQueuePage({
                   albumName={album.name}
                   artistName={album.artistName}
                   spotifyAlbumId={album.spotifyAlbumId}
-                  albumHref={`/queue/album/${album.spotifyAlbumId}`}
-                  artistHref={`/queue/artist/${artistId}`}
-                  addMoreHref={`/queue/search/artist/${artistId}`}
+                  albumHref={albumHref(album.spotifyAlbumId)}
+                  artistHref={artistQueueHref(artistId)}
+                  addMoreHref={artistSearchHref(artistId)}
                 />
               }
             />
