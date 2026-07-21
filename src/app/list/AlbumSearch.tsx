@@ -8,7 +8,6 @@ import {
 } from "./actions";
 import { AddableAlbumList } from "./AddableAlbumList";
 import { artistSearchHref } from "./routes";
-import { useAddAlbum } from "./useAddAlbum";
 import { ArtistRow } from "@/design/molecules/ArtistRow";
 import { Banner } from "@/design/atoms/Banner";
 import { Button } from "@/design/atoms/Button";
@@ -22,18 +21,18 @@ export function AlbumSearch() {
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
   const [view, setView] = useState<"artist" | "album">("album");
   const [isSearching, startSearch] = useTransition();
-  const { addedIds, isAdding, add, error, setError } = useAddAlbum();
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   function handleSearch(e: FormEvent) {
     e.preventDefault();
-    setError(null);
+    setSearchError(null);
     startSearch(async () => {
       try {
         const result = await search(query);
         setArtists(result.artists);
         setAlbums(result.albums);
       } catch {
-        setError("Couldn't search Spotify. Try again.");
+        setSearchError("Couldn't search Spotify. Try again.");
       }
     });
   }
@@ -78,12 +77,12 @@ export function AlbumSearch() {
         )}
       </HStack>
 
-      {error && (
+      {searchError && (
         <Banner
           status="error"
-          title={error}
+          title={searchError}
           isDismissable
-          onDismiss={() => setError(null)}
+          onDismiss={() => setSearchError(null)}
         />
       )}
 
@@ -100,14 +99,7 @@ export function AlbumSearch() {
         </VStack>
       )}
 
-      {view === "album" && albums.length > 0 && (
-        <AddableAlbumList
-          albums={albums}
-          addedIds={addedIds}
-          isAdding={isAdding}
-          onAdd={add}
-        />
-      )}
+      {view === "album" && albums.length > 0 && <AddableAlbumList albums={albums} />}
     </VStack>
   );
 }
