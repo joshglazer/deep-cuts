@@ -62,6 +62,19 @@ mutated prop gets silently overwritten and masks what should be local
 state instead); `Readonly<>` makes the type checker catch that at the
 assignment site rather than relying on convention.
 
+## One component per file
+
+Every component — including small local helpers that only exist to be used
+once inside another component — gets its own file, named after the
+component. Don't define a second component (even an unexported one) further
+down in a file that already exports one. For example, `FilterPopover`'s
+label column was originally a local `FilterRow` function declared above
+`FilterPopover` in the same file; it moved to its own `FilterRow.tsx` even
+though `FilterPopover` is its only caller. This keeps every file greppable
+by its one component's name, keeps diffs scoped to the component that
+actually changed, and avoids the ambiguity of which of two components in a
+file a given import statement is pulling in.
+
 ## Local dev server: always use 127.0.0.1, never localhost
 
 Spotify's OAuth no longer allows `localhost` as a redirect URI hostname, and
