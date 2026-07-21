@@ -2,6 +2,7 @@
 
 import { LuListFilter } from "react-icons/lu";
 import { CompletedToggle } from "./CompletedToggle";
+import { FilterRow } from "./FilterRow";
 import { SortSelect } from "./SortSelect";
 import { ViewToggle } from "./ViewToggle";
 import type { AlbumSort } from "./sortAlbums";
@@ -10,8 +11,7 @@ import { Heading } from "@/design/atoms/Heading";
 import { Icon } from "@/design/atoms/Icon";
 import { IconButton } from "@/design/atoms/IconButton";
 import { Popover } from "@/design/atoms/Popover";
-import { HStack, StackItem, VStack } from "@/design/atoms/Stack";
-import { Text } from "@/design/atoms/Text";
+import { StackItem, VStack } from "@/design/atoms/Stack";
 
 interface FilterPopoverProps {
   view?: "flat" | "artist";
@@ -39,22 +39,16 @@ export function FilterPopover({
           <Heading level={4}>Filter & sort</Heading>
           <Divider />
           {view && (
-            <HStack gap="sm" vAlign="center">
-              <Text type="label" as="label" textWrap="nowrap" className="w-20 shrink-0">
-                Group by
-              </Text>
+            <FilterRow label="Group by">
               <ViewToggle view={view} />
-            </HStack>
+            </FilterRow>
           )}
           {(view === undefined || view === "flat") && (
-            <HStack gap="sm" vAlign="center">
-              <Text type="label" as="label" textWrap="nowrap" className="w-20 shrink-0">
-                Sort by
-              </Text>
+            <FilterRow label="Sort by">
               <StackItem size="fill">
                 <SortSelect sort={sort} options={sortOptions} />
               </StackItem>
-            </HStack>
+            </FilterRow>
           )}
           {hasCompletedAlbums && <CompletedToggle showCompleted={showCompleted} />}
         </VStack>

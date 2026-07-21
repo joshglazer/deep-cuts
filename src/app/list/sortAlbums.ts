@@ -18,9 +18,8 @@ export const ARTIST_PAGE_ALBUM_SORT_OPTIONS = ALBUM_SORT_OPTIONS.filter(
 );
 
 export function parseAlbumSort(value?: string): AlbumSort {
-  return ALBUM_SORT_OPTIONS.some((option) => option.value === value)
-    ? (value as AlbumSort)
-    : DEFAULT_ALBUM_SORT;
+  const match = ALBUM_SORT_OPTIONS.find((option) => option.value === value);
+  return match?.value ?? DEFAULT_ALBUM_SORT;
 }
 
 interface SortableAlbum {
@@ -58,7 +57,6 @@ export function sortAlbums<T extends SortableAlbum>(
       );
       break;
     case "artist":
-    default:
       sorted.sort(
         (a, b) => a.artistName.localeCompare(b.artistName) || a.name.localeCompare(b.name)
       );

@@ -1,8 +1,8 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Selector } from "@/design/atoms/Selector";
 import { ALBUM_SORT_OPTIONS, DEFAULT_ALBUM_SORT, type AlbumSort } from "./sortAlbums";
+import { useSearchParamUpdater } from "./useSearchParamUpdater";
 
 interface SortSelectProps {
   sort: AlbumSort;
@@ -13,20 +13,7 @@ export function SortSelect({
   sort,
   options = ALBUM_SORT_OPTIONS,
 }: Readonly<SortSelectProps>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  function handleChange(value: string) {
-    const params = new URLSearchParams(searchParams);
-    if (value === DEFAULT_ALBUM_SORT) {
-      params.delete("sort");
-    } else {
-      params.set("sort", value);
-    }
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  }
+  const setSearchParam = useSearchParamUpdater();
 
   return (
     <Selector
@@ -34,7 +21,9 @@ export function SortSelect({
       isLabelHidden
       size="sm"
       value={sort}
-      onChange={handleChange}
+      onChange={(value) =>
+        setSearchParam("sort", value === DEFAULT_ALBUM_SORT ? null : value)
+      }
       options={options}
     />
   );

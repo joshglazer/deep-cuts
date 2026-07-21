@@ -1,32 +1,19 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SegmentedControl } from "@/design/atoms/SegmentedControl";
+import { useSearchParamUpdater } from "./useSearchParamUpdater";
 
 interface ViewToggleProps {
   view: "flat" | "artist";
 }
 
 export function ViewToggle({ view }: Readonly<ViewToggleProps>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  function handleChange(value: string) {
-    const params = new URLSearchParams(searchParams);
-    if (value === "artist") {
-      params.set("view", "artist");
-    } else {
-      params.delete("view");
-    }
-    const query = params.toString();
-    router.push(query ? `${pathname}?${query}` : pathname);
-  }
+  const setSearchParam = useSearchParamUpdater();
 
   return (
     <SegmentedControl
       value={view}
-      onChange={handleChange}
+      onChange={(value) => setSearchParam("view", value === "artist" ? "artist" : null)}
       label="List view"
       options={[
         { value: "flat", label: "Albums" },
