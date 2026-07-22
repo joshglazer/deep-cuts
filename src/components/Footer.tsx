@@ -33,19 +33,31 @@ export async function Footer() {
           </Link>{" "}
           project
         </Text>
-        <HStack gap="sm" vAlign="center">
-          <SiGithub className="h-3 w-3 shrink-0 fill-current text-secondary" />
+        <HStack gap="lg" vAlign="center">
           <Link
-            href="https://github.com/joshglazer/deep-cuts"
-            target="_blank"
+            href="/privacy"
             isStandalone
             type="supporting"
             size="sm"
             hasUnderline={false}
             color="secondary"
           >
-            Source Code
+            Privacy Policy
           </Link>
+          <HStack gap="sm" vAlign="center">
+            <SiGithub className="h-3 w-3 shrink-0 fill-current text-secondary" />
+            <Link
+              href="https://github.com/joshglazer/deep-cuts"
+              target="_blank"
+              isStandalone
+              type="supporting"
+              size="sm"
+              hasUnderline={false}
+              color="secondary"
+            >
+              Source Code
+            </Link>
+          </HStack>
         </HStack>
       </div>
     </footer>

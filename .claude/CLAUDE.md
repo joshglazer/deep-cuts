@@ -175,6 +175,31 @@ as a file anywhere — check current permissions with `aws iam
 list-user-policies` / `get-user-policy` against that user) rather than
 switching the script back to `deep-cuts`.
 
+## Privacy policy: keep it in sync with what the app actually does
+
+`src/app/privacy/page.tsx` is the app's Spotify-facing privacy policy — it
+documents the exact OAuth scopes requested, the exact data stored (`Artist`,
+`Album`, `ListenEvent`, `SpotifyAuth` in `amplify/data/resource.ts`), and how
+users can delete that data. Spotify's Extended Quota Mode review checks this
+page against the app's real behavior, and an inaccurate policy is both a
+review-rejection risk and a real legal exposure (misrepresenting your own
+data practices), not just a docs nit.
+
+Treat updating it the same way as the kill-switch rule above: it's part of
+the change that touches data practices, not a follow-up to skip. Update
+`src/app/privacy/page.tsx` whenever a change:
+
+- Adds, removes, or changes a Spotify OAuth scope (`SPOTIFY_SCOPES` in
+  `src/auth.ts`)
+- Adds a new stored field/table that holds user data, or changes what an
+  existing one holds
+- Introduces a third-party service that touches user data (analytics,
+  logging/error-tracking, another external API) — the policy currently
+  states there are none
+- Changes how/whether a user can delete their data (e.g. the "Delete
+  account" flow in `src/app/account/actions.ts`, or the per-album/per-track
+  reset actions in `src/app/list/actions.ts`)
+
 <!-- ASTRYX:START -->
 Astryx v0.1.4 · 149 components
 CLI: run every command as `npx astryx <cmd>` (shown below as `astryx ...`).
