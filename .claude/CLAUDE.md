@@ -369,6 +369,43 @@ comes from the generated Amplify client, which has no `.mockResolvedValue`
 etc.; at runtime it's the mock object from `src/test/mockDataClient.ts`,
 just not typed that way through the real module's type signature.
 
+## Tests: `@/auth` doesn't resolve under Vitest — mock it per-file, not globally
+
+`@/auth` pulls in `next-auth`, whose `next-auth/lib/env.js` imports
+`next/server` in a way Vitest can't resolve — any test file that
+transitively imports `@/auth` (directly, or via e.g. `actions.ts`,
+`TrackResetButton.tsx`) without mocking it crashes the *whole file* before
+a single test runs: `Cannot find module '.../next/server' imported from
+.../next-auth/lib/env.js`. Verified directly: removing the `@/auth` mock
+from a test that needs it fails with exactly that error, and mocking only
+the specific export actually used (e.g. `requireSpotifyUserIdOrThrow`)
+fixes it — confirming the module resolution itself is the blocker, not
+anything about the mocked behavior underneath it.
+
+Unlike `@/lib/amplify-server`, don't move this to a single global
+`vi.mock("@/auth", ...)` in `vitest.setup.ts` — `auth.test.ts` tests the
+real module, so a global mock would make that impossible, and different
+callers need different subsets of `@/auth`'s surface
+(`requireSpotifyUserIdOrRedirect`, `requireSpotifyUserIdOrThrow`,
+`requireSignedIn`, `auth`, `signIn`, `signOut`, `previewLoginEnabled`,
+`authConfig`) mocked with different behavior. Mock only what that file's
+code path actually calls, e.g.:
+
+```ts
+const requireSpotifyUserIdOrThrow = vi.fn();
+vi.mock("@/auth", () => ({ requireSpotifyUserIdOrThrow }));
+```
+
+This is also why `AlbumRowActionMenu.test.tsx`/`AlbumList.test.tsx`/
+`TrackResetButton.test.tsx` mock the whole `./actions` module rather than
+just `@/auth`: `actions.ts` re-exports functions that call
+`requireSpotifyUserIdOrThrow` internally, so mocking `@/auth` alone would
+still require mocking further into `actions.ts`'s own `dataClient` calls
+to get a component test running — mocking the action function directly is
+both simpler and keeps the test scoped to what that component owns
+(does it call the action with the right args), not `actions.ts`'s own
+behavior (already covered by `actions.test.ts`).
+
 ## Tests: don't mock a child component without a specific, checkable reason
 
 Default to rendering a component's real children — mocking a child (`vi.mock("./Header", ...)`,
