@@ -481,3 +481,29 @@ the change that touches data practices, not a follow-up to skip. Update
 - Changes how/whether a user can delete their data (e.g. the "Delete
   account" flow in `src/app/account/actions.ts`, or the per-album/per-track
   reset actions in `src/app/list/actions.ts`)
+
+### ListenEvent.excludedAt: every new read must filter it out
+
+`resetTrackProgress`/`resetAlbumProgress` (`src/app/list/actions.ts`) don't
+delete a `ListenEvent` row when the user resets progress — they stamp
+`excludedAt` on it instead, so poll-spotify's own dedupe check (matching on
+`spotifyTrackId`+`playedAt`) still finds the row and refuses to recreate a
+play Spotify's recently-played history keeps serving after the reset (see
+the `excludedAt` comment on `ListenEvent` in `amplify/data/resource.ts` for
+the full mechanism). That means the row still physically exists — anything
+that queries `ListenEvent` and doesn't explicitly skip `excludedAt` rows
+will show a reset play as if it still counted.
+
+Every current reader already does this — `getListenStatsByAlbum` and
+`getPlayedTrackDates` (`src/app/list/listenProgress.ts`), `getStats`
+(`src/app/stats/statsData.ts`), and poll-spotify's own completion-count
+seed (`amplify/functions/poll-spotify/handler.ts`) all filter with
+`if (event.excludedAt) continue;` (or equivalent) before counting a play.
+If you add a new query against `ListenEvent` — a new stat, a new progress
+view, anything that lists or counts plays — filter out `excludedAt` rows
+the same way, and add a test asserting an excluded event is invisible to
+it (see `listenProgress.test.ts`/`statsData.test.ts` for the pattern:
+seed one excluded and one active event, assert only the active one shows
+up). Forgetting the filter is a silent correctness bug, not a crash — a
+reset that appears to work will quietly resurface in whatever new surface
+skipped the check.

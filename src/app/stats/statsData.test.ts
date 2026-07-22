@@ -56,6 +56,20 @@ describe("getStats", () => {
     expect(today?.count).toBe(1);
   });
 
+  it("excludes soft-deleted (reset) events from totals and the heatmap", async () => {
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [
+        ...eventsOn("2024-06-12"),
+        { ...eventsOn("2024-06-12")[0], id: "excluded", excludedAt: "2024-06-12T13:00:00.000Z" },
+      ],
+    });
+
+    const result = await getStats("user1");
+
+    expect(result.totalStreams).toBe(1);
+    expect(result.heatmap.find((day) => day.date === "2024-06-12")?.count).toBe(1);
+  });
+
   it("computes this-week and previous-week counts over the same number of days into each week", async () => {
     // Week starts Sunday 2024-06-09; today (Wed) is 3 days in (Sun..Wed = 4 days).
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({

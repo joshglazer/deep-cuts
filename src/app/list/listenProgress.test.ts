@@ -33,6 +33,27 @@ describe("getListenStatsByAlbum", () => {
     ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
   });
 
+  it("skips events that have been excluded by a reset", async () => {
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [
+        { spotifyAlbumId: "album1", spotifyTrackId: "t1", playedAt: "2024-01-01T00:00:00Z" },
+        {
+          spotifyAlbumId: "album1",
+          spotifyTrackId: "t2",
+          playedAt: "2024-01-03T00:00:00Z",
+          excludedAt: "2024-01-04T00:00:00Z",
+        },
+      ],
+    });
+
+    const result = await getListenStatsByAlbum("user1");
+
+    expect(result.get("album1")).toEqual({
+      playedTrackIds: new Set(["t1"]),
+      lastPlayedAt: "2024-01-01T00:00:00Z",
+    });
+  });
+
   it("skips events with no spotifyAlbumId", async () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ spotifyAlbumId: null, spotifyTrackId: "t1", playedAt: "2024-01-01T00:00:00Z" }],
@@ -71,5 +92,19 @@ describe("getPlayedTrackDates", () => {
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
     ).toHaveBeenCalledWith({ spotifyUserId: "user1", spotifyAlbumId: { eq: "album1" } });
+  });
+
+  it("skips events that have been excluded by a reset", async () => {
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [
+        { spotifyTrackId: "t1", playedAt: "2024-01-01T00:00:00Z" },
+        { spotifyTrackId: "t2", playedAt: "2024-01-02T00:00:00Z", excludedAt: "2024-01-03T00:00:00Z" },
+      ],
+    });
+
+    const result = await getPlayedTrackDates("user1", "album1");
+
+    expect(result.get("t1")).toBe("2024-01-01T00:00:00Z");
+    expect(result.has("t2")).toBe(false);
   });
 });
