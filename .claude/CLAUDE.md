@@ -337,3 +337,34 @@ clear, not before it. If a future need calls for also resetting mock
 `test.mockReset` — a different, stronger config option — not a reason to
 reintroduce manual `vi.clearAllMocks()`/`vi.resetAllMocks()` calls in
 individual files.
+
+## Tests: `@/lib/amplify-server` is already mocked globally — don't re-mock it
+
+`vitest.setup.ts` calls `vi.mock("@/lib/amplify-server", ...)` once, for
+every test file, rather than each file that touches `dataClient` mocking
+it individually. Two reasons this lives in setup rather than per-file: it
+cuts the repeated boilerplate, and — more importantly — it means a new
+test file that transitively imports something depending on `dataClient`
+(directly, or via e.g. `actions.ts`/`listenProgress.ts`) can't forget to
+mock it and crash with `Cannot resolve '../../amplify_outputs.json'` (that
+file only exists after `npm run sandbox`, never in CI). Vitest's per-file
+module isolation means each test file still gets its own fresh mock
+instance — no state leaks between files, same as when each file created
+its own.
+
+To use it in a test file, don't call `vi.mock("@/lib/amplify-server", ...)`
+yourself — just import the (already-mocked) binding and cast it to
+configure return values:
+
+```ts
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
+
+const mockDataClient = dataClient as unknown as MockDataClient;
+// mockDataClient.models.Album.list.mockResolvedValue({ data: [...] });
+```
+
+The cast is necessary (not a style choice) — `dataClient`'s real type
+comes from the generated Amplify client, which has no `.mockResolvedValue`
+etc.; at runtime it's the mock object from `src/test/mockDataClient.ts`,
+just not typed that way through the real module's type signature.

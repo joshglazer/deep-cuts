@@ -1,11 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
-import { createMockDataClient, type MockDataClient } from "@/test/mockDataClient";
+import { describe, expect, it } from "vitest";
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
 
-const mockDataClient: MockDataClient = createMockDataClient();
-
-vi.mock("@/lib/amplify-server", () => ({
-  dataClient: mockDataClient,
-}));
+// @/lib/amplify-server is mocked globally in vitest.setup.ts.
+const mockDataClient = dataClient as unknown as MockDataClient;
 
 const { getListenStatsByAlbum, getPlayedTrackDates } = await import("./listenProgress");
 
