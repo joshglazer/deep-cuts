@@ -5,17 +5,11 @@ import {
   DEFAULT_ALBUM_SORT,
   parseAlbumSort,
   sortAlbums,
+  type SortableAlbum,
 } from "./sortAlbums";
 import type { AlbumListenStats } from "./listenProgress";
 
-interface TestAlbum {
-  name: string;
-  artistName: string;
-  addedAt: string;
-  spotifyAlbumId: string;
-}
-
-function makeAlbum(overrides: Partial<TestAlbum>): TestAlbum {
+function makeAlbum(overrides: Partial<SortableAlbum>): SortableAlbum {
   return {
     name: "Album",
     artistName: "Artist",
