@@ -5,11 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 so the PR's base commit is available locally for the
+      # diff-coverage step below (git diff needs the base ref, not just HEAD).
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -19,5 +27,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      # Grades only the lines this PR actually added/changed against the
+      # 80% target — not the whole repo's total (see scripts/check-coverage-diff.mjs
+      # for why: a global threshold would block every PR in an incremental
+      # test-coverage rollout until the entire app hit 80%, not just the
+      # code each PR adds). Posts/updates a PR comment with the result and
+      # fails the job if below threshold.
+      - name: Check coverage on changed lines
+        if: github.event_name == 'pull_request'
+        env:
+          DIFF_BASE: ${{ github.event.pull_request.base.sha }}
+          DIFF_HEAD: HEAD
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: npm run test:coverage:diff

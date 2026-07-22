@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:coverage:diff": "node scripts/check-coverage-diff.mjs",
     "design:theme": "astryx theme build src/design/theme/spotifyTheme.ts -o src/design/theme/spotify-theme.css",
     "sandbox": "ampx sandbox --profile deep-cuts",
     "sandbox:secrets": "bash scripts/set-sandbox-secrets.sh"
@@ -44,6 +45,7 @@
     "constructs": "^10.6.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "istanbul-lib-coverage": "^3.2.2",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",

@@ -40,6 +40,10 @@ export default defineConfig({
         // Every caller mocks this module instead (see src/test/mockDataClient.ts).
         "src/lib/amplify-server.ts",
       ],
+      // No global `thresholds` here on purpose — coverage is gated per-PR on
+      // changed lines only (scripts/check-coverage-diff.mjs), not on the
+      // whole repo's total. A global threshold would block every PR in this
+      // stack until the entire app hit 80%, not just the code each PR adds.
     },
   },
 });
