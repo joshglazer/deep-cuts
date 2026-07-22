@@ -313,3 +313,163 @@ components, utilities`) — Tailwind utilities always win. Passing
 safe and expected; hardcoding colors that way is not — use theme tokens
 (`bg-surface`, `text-primary`, etc., bridged via `tailwind-theme.css`) or
 `variant`/`color` props instead.
+
+## Tests: assert on mock calls with matchers, not raw `.mock.calls[n]` indexing
+
+Don't reach into `someMock.mock.calls[0][0]` (or `[1][1]`, etc.) to assert
+on a mock's arguments — it reads as noise (which call? which argument?) and
+gives no useful failure message when it's wrong. Use the matcher that says
+what you actually mean:
+
+- Checking the most recent (or only) call: `expect(fn).toHaveBeenLastCalledWith(...)`.
+- Checking a call at a specific position when a mock is called more than
+  once with different args (e.g. a token-fetch call followed by the real
+  request, as in `spotify.test.ts`) — `expect(fn).toHaveBeenNthCalledWith(1, ...)` /
+  `toHaveBeenNthCalledWith(2, ...)` rather than indexing `.mock.calls[0]` /
+  `.mock.calls[1]` by hand.
+- Partial-match a single argument (e.g. a URL you only care contains a
+  query string, not the full string) — pass `expect.stringContaining(...)`
+  as that argument to the matcher above, instead of extracting the raw
+  value and calling `.toContain()` on it separately.
+
+Only fall back to extracting a call's arguments manually (e.g.
+`const [request] = fn.mock.lastCall;`) when you need to inspect a
+*property* of an argument rather than assert the whole argument's value —
+e.g. `route.test.ts` destructures `Auth.mock.lastCall` to read the
+forwarded request's rewritten `url`, since the whole `Request` object
+isn't meaningfully comparable with a matcher (two `Request`s with
+identical content still aren't recognized as equal). Even then, use
+`.mock.lastCall` (or `.mock.calls.at(-1)`) over `.mock.calls[0]` so the
+intent — "the most recent call" — is in the code, not implied by a magic
+index that only happens to mean "most recent" because there's just one call.
+
+## Tests: don't add `beforeEach(() => vi.clearAllMocks())` — it's global
+
+`vitest.config.ts` sets `test.clearMocks: true`, which runs
+`vi.clearAllMocks()` before every test automatically, repo-wide. Don't add
+a per-file `beforeEach(() => { vi.clearAllMocks(); })` — it's dead weight
+that duplicates what the config already does for every test, in every
+file, unconditionally. If a `beforeEach` in a test file needs to do other
+setup (e.g. `vi.setSystemTime(...)` in `statsData.test.ts`), that setup
+still belongs in a `beforeEach`, just without a `vi.clearAllMocks()` line
+alongside it — the global config hook runs before it either way, so
+mocks are already clear by the time any file-level `beforeEach` runs.
+
+This only clears call history (`.mock.calls`/`.mock.results`/etc.), not
+configured behavior — a `vi.fn().mockResolvedValue(...)` set inside an
+`it()` block still works normally, since that runs after the automatic
+clear, not before it. If a future need calls for also resetting mock
+*implementations* between tests (not just call history), that's
+`test.mockReset` — a different, stronger config option — not a reason to
+reintroduce manual `vi.clearAllMocks()`/`vi.resetAllMocks()` calls in
+individual files.
+
+## Tests: `@/lib/amplify-server` is already mocked globally — don't re-mock it
+
+`vitest.setup.ts` calls `vi.mock("@/lib/amplify-server", ...)` once, for
+every test file, rather than each file that touches `dataClient` mocking
+it individually. Two reasons this lives in setup rather than per-file: it
+cuts the repeated boilerplate, and — more importantly — it means a new
+test file that transitively imports something depending on `dataClient`
+(directly, or via e.g. `actions.ts`/`listenProgress.ts`) can't forget to
+mock it and crash with `Cannot resolve '../../amplify_outputs.json'` (that
+file only exists after `npm run sandbox`, never in CI). Vitest's per-file
+module isolation means each test file still gets its own fresh mock
+instance — no state leaks between files, same as when each file created
+its own.
+
+To use it in a test file, don't call `vi.mock("@/lib/amplify-server", ...)`
+yourself — just import the (already-mocked) binding and cast it to
+configure return values:
+
+```ts
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
+
+const mockDataClient = dataClient as unknown as MockDataClient;
+// mockDataClient.models.Album.list.mockResolvedValue({ data: [...] });
+```
+
+The cast is necessary (not a style choice) — `dataClient`'s real type
+comes from the generated Amplify client, which has no `.mockResolvedValue`
+etc.; at runtime it's the mock object from `src/test/mockDataClient.ts`,
+just not typed that way through the real module's type signature.
+
+## Tests: `@/auth` doesn't resolve under Vitest — mock it per-file, not globally
+
+`@/auth` pulls in `next-auth`, whose `next-auth/lib/env.js` imports
+`next/server` in a way Vitest can't resolve — any test file that
+transitively imports `@/auth` (directly, or via e.g. `actions.ts`,
+`TrackResetButton.tsx`) without mocking it crashes the *whole file* before
+a single test runs: `Cannot find module '.../next/server' imported from
+.../next-auth/lib/env.js`. Verified directly: removing the `@/auth` mock
+from a test that needs it fails with exactly that error, and mocking only
+the specific export actually used (e.g. `requireSpotifyUserIdOrThrow`)
+fixes it — confirming the module resolution itself is the blocker, not
+anything about the mocked behavior underneath it.
+
+Unlike `@/lib/amplify-server`, don't move this to a single global
+`vi.mock("@/auth", ...)` in `vitest.setup.ts` — `auth.test.ts` tests the
+real module, so a global mock would make that impossible, and different
+callers need different subsets of `@/auth`'s surface
+(`requireSpotifyUserIdOrRedirect`, `requireSpotifyUserIdOrThrow`,
+`requireSignedIn`, `auth`, `signIn`, `signOut`, `previewLoginEnabled`,
+`authConfig`) mocked with different behavior. Mock only what that file's
+code path actually calls, e.g.:
+
+```ts
+const requireSpotifyUserIdOrThrow = vi.fn();
+vi.mock("@/auth", () => ({ requireSpotifyUserIdOrThrow }));
+```
+
+This is also why `AlbumRowActionMenu.test.tsx`/`AlbumList.test.tsx`/
+`TrackResetButton.test.tsx` mock the whole `./actions` module rather than
+just `@/auth`: `actions.ts` re-exports functions that call
+`requireSpotifyUserIdOrThrow` internally, so mocking `@/auth` alone would
+still require mocking further into `actions.ts`'s own `dataClient` calls
+to get a component test running — mocking the action function directly is
+both simpler and keeps the test scoped to what that component owns
+(does it call the action with the right args), not `actions.ts`'s own
+behavior (already covered by `actions.test.ts`).
+
+## Tests: don't mock a child component without a specific, checkable reason
+
+Default to rendering a component's real children — mocking a child (`vi.mock("./Header", ...)`,
+stubbing it out to a `<div />`) trades a test that exercises real behavior
+for one that only proves your mock was wired up correctly. Reach for it
+only when there's a concrete blocker, and name that blocker in a comment
+next to the `vi.mock` call — "avoids re-testing X, which has its own test"
+is not by itself a reason to mock (that's true of nearly every child and
+would justify mocking everything).
+
+Reasons that *do* hold up, seen so far in this codebase:
+
+- **The child is an async Server Component embedded as JSX.** `Header`
+  and `Footer` are `export async function Header() { ... }`, called
+  directly by `PageShell` as `<Header />`. Client-side React (what
+  `@testing-library/react` renders through) cannot execute an async
+  function component inline in a tree — it throws `"<Header> is an async
+  Client Component. Only Server Components can be async at the moment"`
+  and **aborts the entire render**, not just that subtree (verified: a
+  `PageShell` test with a real, unmocked `Header` renders nothing at all,
+  not even `PageShell`'s own title). This only applies when the async
+  component is invoked as JSX by another component under test. If the
+  async component itself *is* the thing under test, don't mock it — call
+  it directly and await it instead: `render(await Header())` (see
+  `Header.test.tsx`, `Footer.test.tsx`), which sidesteps the problem
+  entirely and exercises the real component.
+- **The child has an unrelated, verified defect that crashes rendering.**
+  `AlbumSearch.test.tsx` mocks `@/design/atoms/Button` because Astryx's
+  `Button` calls its own internal `useTransition()`, which deterministically
+  crashes React's dev-mode hook-count check when mounted under a parent
+  whose own `useTransition` drives that `Button`'s `isLoading` prop —
+  confirmed in isolation, unrelated to how the test renders it. `Button`
+  keeps its own coverage elsewhere (`SegmentedControl.test.tsx`,
+  `AddableAlbumList.test.tsx`), so this only routes around the crash
+  rather than skipping coverage of `Button` itself.
+
+If you hit a case that doesn't fit either pattern above, don't reach for
+`vi.mock` on a child component reflexively — reproduce the actual failure
+first (render it for real, see what breaks), and only mock once that
+failure is understood and can't be fixed a different way (e.g. calling an
+async component directly instead of embedding it, per the first bullet).

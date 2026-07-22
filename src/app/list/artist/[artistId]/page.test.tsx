@@ -1,0 +1,88 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
+
+// @/lib/amplify-server is mocked globally in vitest.setup.ts.
+const mockDataClient = dataClient as unknown as MockDataClient;
+
+const requireSpotifyUserIdOrRedirect = vi.fn();
+vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
+
+// Header is an async server component and crashes when embedded as JSX under
+// client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
+// still renders.
+vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
+// AlbumRowActionMenu (rendered per row via AlbumList) imports actions.ts,
+// which imports @/auth — next-auth's module graph doesn't resolve under
+// Vitest. Stubbed the same way as AlbumList.test.tsx.
+vi.mock("@/app/list/actions", () => ({ removeAlbum: vi.fn(), resetAlbumProgress: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/list/artist/artist1",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+const { default: ArtistListPage } = await import("./page");
+
+function album(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "row1",
+    name: "OK Computer",
+    artistName: "Radiohead",
+    imageUrl: null,
+    spotifyAlbumId: "album1",
+    spotifyArtistId: "artist1",
+    totalTracks: 12,
+    completedAt: null,
+    addedAt: "2024-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+const params = Promise.resolve({ artistId: "artist1" });
+function searchParams(params: { sort?: string; completed?: string } = {}) {
+  return Promise.resolve(params);
+}
+
+describe("ArtistListPage", () => {
+  it("shows an empty state and falls back to 'Artist' as the title when there are no albums", async () => {
+    requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
+    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
+      { data: [] }
+    );
+
+    render(await ArtistListPage({ params, searchParams: searchParams() }));
+
+    expect(screen.getByText("No albums on your list for this artist")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Artist" })).toBeInTheDocument();
+  });
+
+  it("uses the artist's name from the albums as the page title", async () => {
+    requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
+    mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
+      { data: [] }
+    );
+
+    render(await ArtistListPage({ params, searchParams: searchParams() }));
+
+    expect(screen.getByRole("heading", { name: "Radiohead" })).toBeInTheDocument();
+    expect(screen.getAllByText("OK Computer").length).toBeGreaterThan(0);
+  });
+
+  it("shows an all-caught-up empty state when every album is completed and completed is hidden", async () => {
+    requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
+    mockDataClient.models.Album.list.mockResolvedValue({
+      data: [album({ completedAt: "2024-01-01" })],
+    });
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
+      { data: [] }
+    );
+
+    render(await ArtistListPage({ params, searchParams: searchParams() }));
+
+    expect(screen.getByText("All caught up")).toBeInTheDocument();
+  });
+});
