@@ -18,7 +18,6 @@ function eventsOn(...dateKeys: string[]) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
   // A Wednesday, so week/month math below has a predictable "days into" count.
   vi.setSystemTime(new Date("2024-06-12T10:00:00.000Z"));
 });

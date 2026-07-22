@@ -14,6 +14,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     css: false,
+    // Runs vi.clearAllMocks() before every test automatically — don't add a
+    // per-file `beforeEach(() => vi.clearAllMocks())` for this, it's redundant.
+    clearMocks: true,
     coverage: {
       provider: "v8",
       // json-summary/json feed the PR coverage-report comment posted in CI

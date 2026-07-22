@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createMockDataClient, type MockDataClient } from "@/test/mockDataClient";
 
 const mockDataClient: MockDataClient = createMockDataClient();
@@ -8,10 +8,6 @@ vi.mock("@/lib/amplify-server", () => ({
 }));
 
 const { getListenStatsByAlbum, getPlayedTrackDates } = await import("./listenProgress");
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("getListenStatsByAlbum", () => {
   it("groups played track ids and tracks the most recent play per album", async () => {

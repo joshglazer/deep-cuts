@@ -316,3 +316,24 @@ recognized as equal). Even then, use `.mock.lastCall` (or
 `.mock.calls.at(-1)`) over `.mock.calls[0]` so the intent — "the most
 recent call" — is in the code, not implied by a magic index that only
 happens to mean "most recent" because there's just one call.
+
+## Tests: don't add `beforeEach(() => vi.clearAllMocks())` — it's global
+
+`vitest.config.ts` sets `test.clearMocks: true`, which runs
+`vi.clearAllMocks()` before every test automatically, repo-wide. Don't add
+a per-file `beforeEach(() => { vi.clearAllMocks(); })` — it's dead weight
+that duplicates what the config already does for every test, in every
+file, unconditionally. If a `beforeEach` in a test file needs to do other
+setup (e.g. `vi.setSystemTime(...)` in `statsData.test.ts`), that setup
+still belongs in a `beforeEach`, just without a `vi.clearAllMocks()` line
+alongside it — the global config hook runs before it either way, so
+mocks are already clear by the time any file-level `beforeEach` runs.
+
+This only clears call history (`.mock.calls`/`.mock.results`/etc.), not
+configured behavior — a `vi.fn().mockResolvedValue(...)` set inside an
+`it()` block still works normally, since that runs after the automatic
+clear, not before it. If a future need calls for also resetting mock
+*implementations* between tests (not just call history), that's
+`test.mockReset` — a different, stronger config option — not a reason to
+reintroduce manual `vi.clearAllMocks()`/`vi.resetAllMocks()` calls in
+individual files.
