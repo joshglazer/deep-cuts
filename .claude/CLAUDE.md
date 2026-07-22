@@ -108,15 +108,39 @@ hardcoding colors that way is not — use theme tokens (`bg-surface`,
 `text-primary`, via `tailwind-theme.css`) or `variant`/`color` props
 instead.
 
-**Astryx CLI** — discover components before guessing: `npx astryx build
-"<idea>"` returns a starter kit (page/blocks/components); `npx astryx
-template <name>` scaffolds or shows reference layout; `npx astryx
-component <Name>` gives props + examples; `npx astryx docs <topic>` for
-tokens/layout/spacing/etc. No `<div>` for layout — components handle
-spacing. Ignore Astryx's own generic setup instructions (importing
-`reset.css`/`astryx.css` in a JS entry file) — this project wires those
-through `globals.css`'s cascade-layer chain instead; don't add a second
-copy in a component.
+<!-- ASTRYX:START -->
+Astryx v0.1.4 · 149 components
+CLI: run every command as `npx astryx <cmd>` (shown below as `astryx ...`).
+
+SETUP (once, in your app entry e.g. main.tsx) — without these, components render unstyled:
+  import "@astryxdesign/core/reset.css";
+  import "@astryxdesign/core/astryx.css";
+
+WORKFLOW — discover, don't guess. Before writing UI:
+1. `astryx build "<idea>"` — START HERE: returns a kit (closest [page] + [block]s + [component]s). No args = full playbook.
+2. `astryx template <name> [--skeleton]` — scaffold the [page]/[block]s it named, or study their layout. Templates are reference code.
+3. `astryx component <Name>` — props + examples for every component you use.
+
+RULES:
+- No <div> — components do all layout/spacing. Full page → AppShell; sidebar nav → SideNav.
+- Frame first: pick the shell (AppShell / Layout+LayoutPanel) and budget regions in px BEFORE writing content (`astryx docs layout`).
+- Dense data = rows (Table, List/Item) edge-to-edge — never Card-wrapped list items. Card = dashboard widgets, galleries, settings groups only.
+- Status → StatusDot/Token; Badge only for counts and enumerated states, never decoration.
+- Custom styling: component props first; else Tailwind utilities backed by tokens (bg-surface, text-primary, rounded-lg) via tailwind-theme.css. No raw hex/px.
+- Tokens for every value (`astryx docs tokens`). Brand/accent via `astryx theme` — never override --color-* in :root.
+
+MORE CLI:
+  search "<query>"   find any component / hook / doc / template / block
+  component --list   149 components by category
+  template --list    page + block recipes
+  docs <topic>       color, elevation, icons, illustrations, layout, migration, motion, principles, shape, spacing, styling, theme, tokens, typography
+  swizzle <Name>     eject component source for deep customization
+  upgrade --apply    run after any @astryxdesign/core bump
+<!-- ASTRYX:END -->
+
+Note: ignore the generic "SETUP" step above (importing reset.css/astryx.css in a JS
+entry file) — this project wires those imports through `src/app/globals.css`'s
+cascade-layer chain instead (see above). Don't add a second copy in a component.
 
 ## Testing
 
