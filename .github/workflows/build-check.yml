@@ -1,5 +1,8 @@
-name: Build
+name: Build Check
 
+# Verifies `next build` still succeeds — a compile/type-check gate, not a
+# production build. Amplify Hosting (amplify.yml) does the real build that
+# actually ships, against the real backend; this job never deploys anything.
 on:
   push:
     branches: [main]
@@ -9,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,7 +70,7 @@ jobs:
           };
           EOF
 
-      - name: Build
+      - name: Check that the app builds
         env:
           # Placeholder values so Auth.js's config (src/auth.ts) has
           # something to read at module-eval time during the build — none of
