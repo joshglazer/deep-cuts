@@ -22,7 +22,7 @@ export function parseAlbumSort(value?: string): AlbumSort {
   return match?.value ?? DEFAULT_ALBUM_SORT;
 }
 
-interface SortableAlbum {
+export interface SortableAlbum {
   name: string;
   artistName: string;
   addedAt: string;

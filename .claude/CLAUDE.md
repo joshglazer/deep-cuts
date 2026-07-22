@@ -288,3 +288,83 @@ components, utilities`) — Tailwind utilities always win. Passing
 safe and expected; hardcoding colors that way is not — use theme tokens
 (`bg-surface`, `text-primary`, etc., bridged via `tailwind-theme.css`) or
 `variant`/`color` props instead.
+
+## Tests: assert on mock calls with matchers, not raw `.mock.calls[n]` indexing
+
+Don't reach into `someMock.mock.calls[0][0]` (or `[1][1]`, etc.) to assert
+on a mock's arguments — it reads as noise (which call? which argument?) and
+gives no useful failure message when it's wrong. Use the matcher that says
+what you actually mean:
+
+- Checking the most recent (or only) call: `expect(fn).toHaveBeenLastCalledWith(...)`.
+- Checking a call at a specific position when a mock is called more than
+  once with different args (e.g. a token-fetch call followed by the real
+  request, as in `spotify.test.ts`) — `expect(fn).toHaveBeenNthCalledWith(1, ...)` /
+  `toHaveBeenNthCalledWith(2, ...)` rather than indexing `.mock.calls[0]` /
+  `.mock.calls[1]` by hand.
+- Partial-match a single argument (e.g. a URL you only care contains a
+  query string, not the full string) — pass `expect.stringContaining(...)`
+  as that argument to the matcher above, instead of extracting the raw
+  value and calling `.toContain()` on it separately.
+
+Only fall back to extracting a call's arguments manually (e.g.
+`const [request] = fn.mock.lastCall;`) when you need to inspect a
+*property* of an argument rather than assert the whole argument's value —
+some Web API objects (e.g. `Request`) aren't meaningfully comparable with a
+matcher at all (two `Request`s with identical content still aren't
+recognized as equal). Even then, use `.mock.lastCall` (or
+`.mock.calls.at(-1)`) over `.mock.calls[0]` so the intent — "the most
+recent call" — is in the code, not implied by a magic index that only
+happens to mean "most recent" because there's just one call.
+
+## Tests: don't add `beforeEach(() => vi.clearAllMocks())` — it's global
+
+`vitest.config.ts` sets `test.clearMocks: true`, which runs
+`vi.clearAllMocks()` before every test automatically, repo-wide. Don't add
+a per-file `beforeEach(() => { vi.clearAllMocks(); })` — it's dead weight
+that duplicates what the config already does for every test, in every
+file, unconditionally. If a `beforeEach` in a test file needs to do other
+setup (e.g. `vi.setSystemTime(...)` in `statsData.test.ts`), that setup
+still belongs in a `beforeEach`, just without a `vi.clearAllMocks()` line
+alongside it — the global config hook runs before it either way, so
+mocks are already clear by the time any file-level `beforeEach` runs.
+
+This only clears call history (`.mock.calls`/`.mock.results`/etc.), not
+configured behavior — a `vi.fn().mockResolvedValue(...)` set inside an
+`it()` block still works normally, since that runs after the automatic
+clear, not before it. If a future need calls for also resetting mock
+*implementations* between tests (not just call history), that's
+`test.mockReset` — a different, stronger config option — not a reason to
+reintroduce manual `vi.clearAllMocks()`/`vi.resetAllMocks()` calls in
+individual files.
+
+## Tests: `@/lib/amplify-server` is already mocked globally — don't re-mock it
+
+`vitest.setup.ts` calls `vi.mock("@/lib/amplify-server", ...)` once, for
+every test file, rather than each file that touches `dataClient` mocking
+it individually. Two reasons this lives in setup rather than per-file: it
+cuts the repeated boilerplate, and — more importantly — it means a new
+test file that transitively imports something depending on `dataClient`
+(directly, or via e.g. `actions.ts`/`listenProgress.ts`) can't forget to
+mock it and crash with `Cannot resolve '../../amplify_outputs.json'` (that
+file only exists after `npm run sandbox`, never in CI). Vitest's per-file
+module isolation means each test file still gets its own fresh mock
+instance — no state leaks between files, same as when each file created
+its own.
+
+To use it in a test file, don't call `vi.mock("@/lib/amplify-server", ...)`
+yourself — just import the (already-mocked) binding and cast it to
+configure return values:
+
+```ts
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
+
+const mockDataClient = dataClient as unknown as MockDataClient;
+// mockDataClient.models.Album.list.mockResolvedValue({ data: [...] });
+```
+
+The cast is necessary (not a style choice) — `dataClient`'s real type
+comes from the generated Amplify client, which has no `.mockResolvedValue`
+etc.; at runtime it's the mock object from `src/test/mockDataClient.ts`,
+just not typed that way through the real module's type signature.
