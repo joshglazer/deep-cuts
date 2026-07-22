@@ -21,10 +21,10 @@ describe("GET /api/auth/[...nextauth]", () => {
 
     await GET(request);
 
-    const forwarded = Auth.mock.calls[0][0] as Request;
+    const [forwarded, config] = Auth.mock.lastCall as [Request, unknown];
     expect(new URL(forwarded.url).hostname).toBe("127.0.0.1");
     expect(new URL(forwarded.url).port).toBe("3000");
-    expect(Auth.mock.calls[0][1]).toBe(authConfig);
+    expect(config).toBe(authConfig);
   });
 
   it("clears a stale port when the Host header has none", async () => {
@@ -35,7 +35,7 @@ describe("GET /api/auth/[...nextauth]", () => {
 
     await GET(request);
 
-    const forwarded = Auth.mock.calls[0][0] as Request;
+    const [forwarded] = Auth.mock.lastCall as [Request];
     expect(new URL(forwarded.url).hostname).toBe("example.com");
     expect(new URL(forwarded.url).port).toBe("");
   });
@@ -47,7 +47,7 @@ describe("GET /api/auth/[...nextauth]", () => {
 
     await GET(request);
 
-    expect(Auth.mock.calls[0][0]).toBe(request);
+    expect(Auth).toHaveBeenLastCalledWith(request, authConfig);
   });
 });
 
@@ -61,7 +61,7 @@ describe("POST /api/auth/[...nextauth]", () => {
 
     await POST(request);
 
-    const forwarded = Auth.mock.calls[0][0] as Request;
+    const [forwarded] = Auth.mock.lastCall as [Request];
     expect(forwarded.method).toBe("POST");
     expect(new URL(forwarded.url).hostname).toBe("127.0.0.1");
   });
