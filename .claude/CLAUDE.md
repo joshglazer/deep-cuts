@@ -310,12 +310,13 @@ what you actually mean:
 Only fall back to extracting a call's arguments manually (e.g.
 `const [request] = fn.mock.lastCall;`) when you need to inspect a
 *property* of an argument rather than assert the whole argument's value —
-some Web API objects (e.g. `Request`) aren't meaningfully comparable with a
-matcher at all (two `Request`s with identical content still aren't
-recognized as equal). Even then, use `.mock.lastCall` (or
-`.mock.calls.at(-1)`) over `.mock.calls[0]` so the intent — "the most
-recent call" — is in the code, not implied by a magic index that only
-happens to mean "most recent" because there's just one call.
+e.g. `route.test.ts` destructures `Auth.mock.lastCall` to read the
+forwarded request's rewritten `url`, since the whole `Request` object
+isn't meaningfully comparable with a matcher (two `Request`s with
+identical content still aren't recognized as equal). Even then, use
+`.mock.lastCall` (or `.mock.calls.at(-1)`) over `.mock.calls[0]` so the
+intent — "the most recent call" — is in the code, not implied by a magic
+index that only happens to mean "most recent" because there's just one call.
 
 ## Tests: don't add `beforeEach(() => vi.clearAllMocks())` — it's global
 
