@@ -20,3 +20,23 @@ vi.mock("@/lib/amplify-server", () => ({
 // (formatDate, statsData's day-key math); pin the test runner to UTC so
 // those assertions don't depend on the machine running them.
 process.env.TZ = "UTC";
+
+// jsdom doesn't implement the <dialog> or popover APIs that Astryx's
+// MobileNav/Popover/DropdownMenu components call into — without these
+// no-op stubs, mounting them throws "showModal is not a function".
+if (typeof HTMLDialogElement !== "undefined") {
+  HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+    this.open = true;
+  };
+  HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
+    this.open = false;
+  };
+}
+if (typeof HTMLElement !== "undefined") {
+  HTMLElement.prototype.showPopover ??= function showPopover(this: HTMLElement) {
+    this.setAttribute("data-open", "");
+  };
+  HTMLElement.prototype.hidePopover ??= function hidePopover(this: HTMLElement) {
+    this.removeAttribute("data-open");
+  };
+}
