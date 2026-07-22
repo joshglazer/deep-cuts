@@ -16,7 +16,9 @@ export default defineConfig({
     css: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "lcov"],
+      // json-summary/json feed the PR coverage-report comment posted in CI
+      // (see .github/workflows/test.yml) — html/lcov stay for local/tooling use.
+      reporter: ["text", "html", "lcov", "json-summary", "json"],
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         // Thin re-exports with no logic of their own to test — the
