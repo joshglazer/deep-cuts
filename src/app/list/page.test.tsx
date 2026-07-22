@@ -12,25 +12,19 @@ vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
 const getArtists = vi.fn();
 vi.mock("@/lib/spotify", () => ({ getArtists }));
 
-vi.mock("@/components/PageShell", () => ({
-  PageShell: ({
-    title,
-    children,
-  }: {
-    title: string;
-    children: React.ReactNode;
-  }) => (
-    <div>
-      <h1>{title}</h1>
-      {children}
-    </div>
-  ),
-}));
+// Header is an async server component and crashes when embedded as JSX under
+// client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
+// still renders.
+vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
 // AlbumRowActionMenu (rendered per row via AlbumList) imports actions.ts,
 // which imports @/auth — next-auth's module graph doesn't resolve under
 // Vitest. Stubbed the same way as AlbumList.test.tsx.
 vi.mock("./actions", () => ({ removeAlbum: vi.fn(), resetAlbumProgress: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/list",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 const { default: ListPage } = await import("./page");
 

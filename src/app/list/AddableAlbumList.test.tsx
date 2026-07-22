@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+// actions.ts imports @/auth, which doesn't resolve under Vitest (see
+// CLAUDE.md) — stubbed rather than pulling that chain in.
 const addAlbum = vi.fn();
 vi.mock("./actions", () => ({ addAlbum }));
 

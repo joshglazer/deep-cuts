@@ -12,14 +12,12 @@ vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
 const getAlbum = vi.fn();
 vi.mock("@/lib/spotify", () => ({ getAlbum }));
 
-vi.mock("@/components/PageShell", () => ({
-  PageShell: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h1>{title}</h1>
-      {children}
-    </div>
-  ),
-}));
+// Header is an async server component and crashes when embedded as JSX under
+// client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
+// still renders.
+vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
+// actions.ts imports @/auth, which doesn't resolve under Vitest (see
+// CLAUDE.md) — stubbed rather than pulling that chain in.
 const resetTrackProgress = vi.fn();
 vi.mock("@/app/list/actions", () => ({ resetTrackProgress }));
 

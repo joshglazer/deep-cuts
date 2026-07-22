@@ -7,14 +7,10 @@ vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
 const getStats = vi.fn();
 vi.mock("./statsData", () => ({ getStats }));
 
-vi.mock("@/components/PageShell", () => ({
-  PageShell: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h1>{title}</h1>
-      {children}
-    </div>
-  ),
-}));
+// Header is an async server component and crashes when embedded as JSX under
+// client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
+// still renders.
+vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
 
 const { default: StatsPage } = await import("./page");
 

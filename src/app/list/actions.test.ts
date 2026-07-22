@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { dataClient } from "@/lib/amplify-server";
 import type { MockDataClient } from "@/test/mockDataClient";
 
@@ -38,10 +38,6 @@ const spotifyAlbum = {
   release_date: "1997-05-21",
   total_tracks: 12,
 };
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("search", () => {
   it("requires a signed-in session and returns an empty result for a blank query", async () => {

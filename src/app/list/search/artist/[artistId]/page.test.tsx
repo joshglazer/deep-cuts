@@ -4,17 +4,15 @@ import { render, screen } from "@testing-library/react";
 const requireSpotifyUserIdOrRedirect = vi.fn();
 vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
 
+// actions.ts calls further @/auth exports than requireSpotifyUserIdOrRedirect
+// (mocked above) covers, so the action functions themselves are stubbed too.
 const getArtistDiscography = vi.fn();
 vi.mock("@/app/list/actions", () => ({ getArtistDiscography, addAlbum: vi.fn() }));
 
-vi.mock("@/components/PageShell", () => ({
-  PageShell: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h1>{title}</h1>
-      {children}
-    </div>
-  ),
-}));
+// Header is an async server component and crashes when embedded as JSX under
+// client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
+// still renders.
+vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
 
 const { default: ArtistDiscographyPage } = await import("./page");
 

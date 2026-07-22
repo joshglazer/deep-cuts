@@ -26,7 +26,6 @@ vi.mock("next-auth/providers/credentials", () => ({
 let mockAuth: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-  vi.clearAllMocks();
   vi.unstubAllEnvs();
   vi.resetModules();
   mockAuth = vi.fn();

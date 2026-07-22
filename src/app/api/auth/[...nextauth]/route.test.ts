@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 const Auth = vi.fn();
 vi.mock("@auth/core", () => ({ Auth }));
@@ -7,10 +7,6 @@ const authConfig = { providers: [] };
 vi.mock("@/auth", () => ({ authConfig }));
 
 const { GET, POST } = await import("./route");
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
 
 describe("GET /api/auth/[...nextauth]", () => {
   it("rebuilds the request with the real Host header hostname before calling Auth()", async () => {

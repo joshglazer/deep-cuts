@@ -5,6 +5,8 @@ import userEvent from "@testing-library/user-event";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 
+// actions.ts imports @/auth, which doesn't resolve under Vitest (see
+// CLAUDE.md) — stubbed rather than pulling that chain in.
 const removeAlbum = vi.fn();
 const resetAlbumProgress = vi.fn();
 vi.mock("./actions", () => ({ removeAlbum, resetAlbumProgress }));
