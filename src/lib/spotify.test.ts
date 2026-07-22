@@ -38,9 +38,15 @@ describe("search", () => {
     expect(result.artists.items).toEqual([{ id: "a1" }]);
     expect(result.albums.items).toEqual([{ id: "al1" }]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls[0][0]).toBe("https://accounts.spotify.com/api/token");
-    expect(fetchMock.mock.calls[1][0]).toContain("/search?type=artist,album&q=radiohead");
-    expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe("Bearer app-token");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://accounts.spotify.com/api/token",
+      expect.anything()
+    );
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("/search?type=artist,album&q=radiohead"),
+      { headers: { Authorization: "Bearer app-token" } }
+    );
   });
 
   it("reuses a cached app token across calls", async () => {
@@ -127,7 +133,10 @@ describe("getArtists", () => {
 
     await spotify.getArtists(["id1", "id2"]);
 
-    expect(fetchMock.mock.calls[1][0]).toContain("/artists?ids=id1,id2");
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("/artists?ids=id1,id2"),
+      expect.anything()
+    );
   });
 });
 
@@ -175,7 +184,9 @@ describe("getRecentlyPlayed", () => {
 
     await spotify.getRecentlyPlayed("user-token");
 
-    expect(fetchMock.mock.calls[0][0]).toContain("/me/player/recently-played?limit=50");
-    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe("Bearer user-token");
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      expect.stringContaining("/me/player/recently-played?limit=50"),
+      { headers: { Authorization: "Bearer user-token" } }
+    );
   });
 });

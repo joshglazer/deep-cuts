@@ -288,3 +288,31 @@ components, utilities`) — Tailwind utilities always win. Passing
 safe and expected; hardcoding colors that way is not — use theme tokens
 (`bg-surface`, `text-primary`, etc., bridged via `tailwind-theme.css`) or
 `variant`/`color` props instead.
+
+## Tests: assert on mock calls with matchers, not raw `.mock.calls[n]` indexing
+
+Don't reach into `someMock.mock.calls[0][0]` (or `[1][1]`, etc.) to assert
+on a mock's arguments — it reads as noise (which call? which argument?) and
+gives no useful failure message when it's wrong. Use the matcher that says
+what you actually mean:
+
+- Checking the most recent (or only) call: `expect(fn).toHaveBeenLastCalledWith(...)`.
+- Checking a call at a specific position when a mock is called more than
+  once with different args (e.g. a token-fetch call followed by the real
+  request, as in `spotify.test.ts`) — `expect(fn).toHaveBeenNthCalledWith(1, ...)` /
+  `toHaveBeenNthCalledWith(2, ...)` rather than indexing `.mock.calls[0]` /
+  `.mock.calls[1]` by hand.
+- Partial-match a single argument (e.g. a URL you only care contains a
+  query string, not the full string) — pass `expect.stringContaining(...)`
+  as that argument to the matcher above, instead of extracting the raw
+  value and calling `.toContain()` on it separately.
+
+Only fall back to extracting a call's arguments manually (e.g.
+`const [request] = fn.mock.lastCall;`) when you need to inspect a
+*property* of an argument rather than assert the whole argument's value —
+some Web API objects (e.g. `Request`) aren't meaningfully comparable with a
+matcher at all (two `Request`s with identical content still aren't
+recognized as equal). Even then, use `.mock.lastCall` (or
+`.mock.calls.at(-1)`) over `.mock.calls[0]` so the intent — "the most
+recent call" — is in the code, not implied by a magic index that only
+happens to mean "most recent" because there's just one call.
