@@ -178,9 +178,14 @@ export async function resetAlbumProgress(id: string) {
 
   await deleteListenEvents(spotifyUserId, album.spotifyAlbumId);
 
-  if (album.completedAt) {
-    await dataClient.models.Album.update({ id: album.id, completedAt: null });
-  }
+  // resetAt marks the boundary poll-spotify checks against played_at, so a
+  // play Spotify still has in its recently-played history doesn't get
+  // rewritten as a fresh ListenEvent on the next poll.
+  await dataClient.models.Album.update({
+    id: album.id,
+    completedAt: null,
+    resetAt: new Date().toISOString(),
+  });
 
   revalidateAlbumPaths(album.spotifyAlbumId, album.spotifyArtistId);
 }
@@ -188,8 +193,23 @@ export async function resetAlbumProgress(id: string) {
 export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  const deleted = await deleteListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
-  if (deleted === 0) return;
+  await deleteListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
+
+  const resetAt = new Date().toISOString();
+  const { data: existingReset } = await dataClient.models.TrackReset.get({
+    spotifyUserId,
+    spotifyTrackId,
+  });
+  if (existingReset) {
+    await dataClient.models.TrackReset.update({ spotifyUserId, spotifyTrackId, resetAt });
+  } else {
+    await dataClient.models.TrackReset.create({
+      spotifyUserId,
+      spotifyAlbumId,
+      spotifyTrackId,
+      resetAt,
+    });
+  }
 
   // Dropping below totalTracks means the album is no longer fully played —
   // no secondary index on spotifyAlbumId alone, so this is a filtered scan
