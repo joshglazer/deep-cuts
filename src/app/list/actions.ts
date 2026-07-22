@@ -134,11 +134,13 @@ export async function removeAlbum(id: string) {
 }
 
 /**
- * Deletes this user's listen events for an album, optionally narrowed to a
- * single track. Returns the number removed so callers can bail out when
- * there was nothing to reset.
+ * Soft-deletes this user's listen events for an album, optionally narrowed
+ * to a single track, by stamping excludedAt rather than deleting the row —
+ * see the ListenEvent.excludedAt comment in amplify/data/resource.ts for why.
+ * Returns the number excluded so callers can bail out when there was
+ * nothing to reset.
  */
-async function deleteListenEvents(
+async function excludeListenEvents(
   spotifyUserId: string,
   spotifyAlbumId: string,
   spotifyTrackId?: string
@@ -148,11 +150,14 @@ async function deleteListenEvents(
       spotifyUserId,
       spotifyAlbumId: { eq: spotifyAlbumId },
     });
-  const matches = spotifyTrackId
-    ? events.filter((event) => event.spotifyTrackId === spotifyTrackId)
-    : events;
+  const matches = (
+    spotifyTrackId ? events.filter((event) => event.spotifyTrackId === spotifyTrackId) : events
+  ).filter((event) => !event.excludedAt);
 
-  await Promise.all(matches.map((event) => dataClient.models.ListenEvent.delete({ id: event.id })));
+  const excludedAt = new Date().toISOString();
+  await Promise.all(
+    matches.map((event) => dataClient.models.ListenEvent.update({ id: event.id, excludedAt }))
+  );
   return matches.length;
 }
 
@@ -176,16 +181,11 @@ export async function resetAlbumProgress(id: string) {
     return;
   }
 
-  await deleteListenEvents(spotifyUserId, album.spotifyAlbumId);
+  await excludeListenEvents(spotifyUserId, album.spotifyAlbumId);
 
-  // resetAt marks the boundary poll-spotify checks against played_at, so a
-  // play Spotify still has in its recently-played history doesn't get
-  // rewritten as a fresh ListenEvent on the next poll.
-  await dataClient.models.Album.update({
-    id: album.id,
-    completedAt: null,
-    resetAt: new Date().toISOString(),
-  });
+  if (album.completedAt) {
+    await dataClient.models.Album.update({ id: album.id, completedAt: null });
+  }
 
   revalidateAlbumPaths(album.spotifyAlbumId, album.spotifyArtistId);
 }
@@ -193,23 +193,8 @@ export async function resetAlbumProgress(id: string) {
 export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  await deleteListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
-
-  const resetAt = new Date().toISOString();
-  const { data: existingReset } = await dataClient.models.TrackReset.get({
-    spotifyUserId,
-    spotifyTrackId,
-  });
-  if (existingReset) {
-    await dataClient.models.TrackReset.update({ spotifyUserId, spotifyTrackId, resetAt });
-  } else {
-    await dataClient.models.TrackReset.create({
-      spotifyUserId,
-      spotifyAlbumId,
-      spotifyTrackId,
-      resetAt,
-    });
-  }
+  const excluded = await excludeListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
+  if (excluded === 0) return;
 
   // Dropping below totalTracks means the album is no longer fully played —
   // no secondary index on spotifyAlbumId alone, so this is a filtered scan

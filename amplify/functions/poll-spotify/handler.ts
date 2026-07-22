@@ -61,22 +61,14 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     });
   if (eventErrors) throw new Error(JSON.stringify(eventErrors));
 
+  // Includes excluded (soft-deleted, i.e. reset) rows on purpose: dedupe
+  // needs to know the exact spotifyTrackId+playedAt pair was already seen at
+  // all, so a play the user reset doesn't get recreated just because
+  // Spotify's own recently-played history keeps serving it for a while after
+  // the reset.
   const alreadyRecorded = new Set(
     existingEvents.map((event) => `${event.spotifyTrackId}|${event.playedAt}`)
   );
-
-  // A play Spotify's recently-played endpoint still returns can be one the
-  // user already reset — resetTrackProgress/resetAlbumProgress delete the
-  // ListenEvent that recorded it but leave Spotify's own history untouched,
-  // so alreadyRecorded alone can't tell "reset" apart from "never seen".
-  // These boundaries do: a played_at at or before the relevant resetAt means
-  // it was reset and should stay ignored rather than being recreated below.
-  const { data: trackResets, errors: trackResetErrors } =
-    await client.models.TrackReset.listTrackResetBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-    });
-  if (trackResetErrors) throw new Error(JSON.stringify(trackResetErrors));
-  const trackResetAtById = new Map(trackResets.map((reset) => [reset.spotifyTrackId, reset.resetAt]));
 
   // Completion is only checked against albums touched by this poll (bounded
   // by Spotify's ~50-item recently-played page, regardless of list size),
@@ -86,6 +78,7 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   const matchedAlbumIds = new Set(matches.map((item) => item.track.album.id));
   const playedTrackIdsByAlbum = new Map<string, Set<string>>();
   for (const event of existingEvents) {
+    if (event.excludedAt) continue;
     if (!event.spotifyAlbumId || !matchedAlbumIds.has(event.spotifyAlbumId)) continue;
     const played = playedTrackIdsByAlbum.get(event.spotifyAlbumId) ?? new Set<string>();
     played.add(event.spotifyTrackId);
@@ -95,13 +88,6 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
   for (const item of matches) {
     const dedupeKey = `${item.track.id}|${item.played_at}`;
     if (alreadyRecorded.has(dedupeKey)) continue;
-
-    const album = listedAlbumsById.get(item.track.album.id);
-    const resetBoundary = [album?.resetAt, trackResetAtById.get(item.track.id)]
-      .filter((resetAt): resetAt is string => resetAt != null)
-      .sort()
-      .at(-1);
-    if (resetBoundary && item.played_at <= resetBoundary) continue;
 
     const { errors: createErrors } = await client.models.ListenEvent.create({
       spotifyUserId,

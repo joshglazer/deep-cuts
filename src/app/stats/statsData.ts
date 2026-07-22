@@ -93,10 +93,11 @@ function buildHeatmap(dailyCounts: Map<string, number>, todayKey: string): Heatm
 }
 
 export async function getStats(spotifyUserId: string): Promise<StatsData> {
-  const { data: events } =
+  const { data: allEvents } =
     await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
       spotifyUserId,
     });
+  const events = allEvents.filter((event) => !event.excludedAt);
 
   const dailyCounts = new Map<string, number>();
   for (const event of events) {

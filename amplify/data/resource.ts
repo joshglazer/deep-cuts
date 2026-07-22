@@ -47,13 +47,6 @@ const schema = a
         // still active. Kept distinct from a hard delete so completed albums
         // stay visible behind the list page's "show completed" toggle.
         completedAt: a.datetime(),
-        // Set by resetAlbumProgress when the user resets the whole album.
-        // poll-spotify ignores any Spotify recently-played item with
-        // played_at at or before this instant, so a play that was already
-        // reset doesn't get resurrected as a new ListenEvent on the next
-        // poll (Spotify's history is independent of this app's state and
-        // keeps returning the same play for a while after it's deleted).
-        resetAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()]),
 
@@ -72,29 +65,19 @@ const schema = a
         spotifyArtistId: a.string(),
         trackName: a.string().required(),
         playedAt: a.datetime().required(),
+        // Set by resetTrackProgress/resetAlbumProgress instead of deleting
+        // the row outright. Keeping the row (rather than hard-deleting it)
+        // means poll-spotify's existing dedupe check — which matches on the
+        // exact spotifyTrackId+playedAt pair — still finds it and refuses to
+        // recreate it, even though Spotify's own recently-played history
+        // keeps serving that same play for a while after the reset. Every
+        // reader that counts "played" tracks (list/album/artist progress,
+        // stats) must filter these out.
+        excludedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()])
       // Otherwise every lookup here (list-page aggregate, track-list page,
       // poll-spotify's dedup check) is a full table scan.
-      .secondaryIndexes((index) => [
-        index("spotifyUserId").sortKeys(["spotifyAlbumId"]),
-      ]),
-
-    // Records the boundary set by resetTrackProgress for a single track,
-    // mirroring Album.resetAt but scoped to one track instead of the whole
-    // album. Keyed by (spotifyUserId, spotifyTrackId) so a repeat reset of
-    // the same track is a plain upsert-by-key rather than piling up rows.
-    TrackReset: a
-      .model({
-        spotifyUserId: a.string().required(),
-        spotifyAlbumId: a.string().required(),
-        spotifyTrackId: a.string().required(),
-        resetAt: a.datetime().required(),
-      })
-      .identifier(["spotifyUserId", "spotifyTrackId"])
-      .authorization((allow) => [allow.publicApiKey()])
-      // poll-spotify fetches every reset for the user in one query, same as
-      // it does for ListenEvent, rather than one get() per matched track.
       .secondaryIndexes((index) => [
         index("spotifyUserId").sortKeys(["spotifyAlbumId"]),
       ]),
