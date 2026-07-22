@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockDataClient, type MockDataClient } from "@/test/mockDataClient";
+import { dataClient } from "@/lib/amplify-server";
+import type { MockDataClient } from "@/test/mockDataClient";
 
-const mockDataClient: MockDataClient = createMockDataClient();
-vi.mock("@/lib/amplify-server", () => ({ dataClient: mockDataClient }));
+// @/lib/amplify-server is mocked globally in vitest.setup.ts. Its identity
+// survives vi.resetModules() below (vitest memoizes vi.mock factory results
+// independently of the module registry reset), so auth.ts re-imported fresh
+// each test still resolves to this same mock instance.
+const mockDataClient = dataClient as unknown as MockDataClient;
 
 const refreshAccessToken = vi.fn();
 vi.mock("@/lib/spotify", () => ({ refreshAccessToken }));
