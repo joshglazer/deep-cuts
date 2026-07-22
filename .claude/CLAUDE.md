@@ -368,3 +368,45 @@ The cast is necessary (not a style choice) — `dataClient`'s real type
 comes from the generated Amplify client, which has no `.mockResolvedValue`
 etc.; at runtime it's the mock object from `src/test/mockDataClient.ts`,
 just not typed that way through the real module's type signature.
+
+## Tests: don't mock a child component without a specific, checkable reason
+
+Default to rendering a component's real children — mocking a child (`vi.mock("./Header", ...)`,
+stubbing it out to a `<div />`) trades a test that exercises real behavior
+for one that only proves your mock was wired up correctly. Reach for it
+only when there's a concrete blocker, and name that blocker in a comment
+next to the `vi.mock` call — "avoids re-testing X, which has its own test"
+is not by itself a reason to mock (that's true of nearly every child and
+would justify mocking everything).
+
+Reasons that *do* hold up, seen so far in this codebase:
+
+- **The child is an async Server Component embedded as JSX.** `Header`
+  and `Footer` are `export async function Header() { ... }`, called
+  directly by `PageShell` as `<Header />`. Client-side React (what
+  `@testing-library/react` renders through) cannot execute an async
+  function component inline in a tree — it throws `"<Header> is an async
+  Client Component. Only Server Components can be async at the moment"`
+  and **aborts the entire render**, not just that subtree (verified: a
+  `PageShell` test with a real, unmocked `Header` renders nothing at all,
+  not even `PageShell`'s own title). This only applies when the async
+  component is invoked as JSX by another component under test. If the
+  async component itself *is* the thing under test, don't mock it — call
+  it directly and await it instead: `render(await Header())` (see
+  `Header.test.tsx`, `Footer.test.tsx`), which sidesteps the problem
+  entirely and exercises the real component.
+- **The child has an unrelated, verified defect that crashes rendering.**
+  `AlbumSearch.test.tsx` mocks `@/design/atoms/Button` because Astryx's
+  `Button` calls its own internal `useTransition()`, which deterministically
+  crashes React's dev-mode hook-count check when mounted under a parent
+  whose own `useTransition` drives that `Button`'s `isLoading` prop —
+  confirmed in isolation, unrelated to how the test renders it. `Button`
+  keeps its own coverage elsewhere (`SegmentedControl.test.tsx`,
+  `AddableAlbumList.test.tsx`), so this only routes around the crash
+  rather than skipping coverage of `Button` itself.
+
+If you hit a case that doesn't fit either pattern above, don't reach for
+`vi.mock` on a child component reflexively — reproduce the actual failure
+first (render it for real, see what breaks), and only mock once that
+failure is understood and can't be fixed a different way (e.g. calling an
+async component directly instead of embedding it, per the first bullet).

@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-// Header is an async server component (calls `auth()`); it's covered by its
-// own test, so it's stubbed here rather than rendered for real — client-side
-// React (as used by RTL) can't render async components directly.
+// Header is an async server component (calls `auth()`), rendered here as
+// <Header /> JSX rather than invoked+awaited directly (that's how
+// Header.test.tsx covers it for real) — client-side React can't execute an
+// async component embedded that way and aborts the *entire* render, not
+// just Header's subtree (verified: an unmocked PageShell render here
+// produces nothing, not even PageShell's own title). Stubbed rather than
+// left broken; Header keeps its own real-rendering coverage in Header.test.tsx.
 vi.mock("./Header", () => ({ Header: () => <header data-testid="header-stub" /> }));
 
 const { PageShell } = await import("./PageShell");
