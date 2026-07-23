@@ -38,6 +38,12 @@ export function HeaderMobileMenu({ brand }: Readonly<HeaderMobileMenuProps>) {
           onClick={() => setIsOpen(false)}
         />
         <SideNavItem
+          label="Activity"
+          href="/activity"
+          isSelected={pathname === "/activity"}
+          onClick={() => setIsOpen(false)}
+        />
+        <SideNavItem
           label="Add to List"
           href="/list/search"
           isSelected={pathname?.startsWith("/list/search") ?? false}

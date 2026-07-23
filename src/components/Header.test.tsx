@@ -19,6 +19,7 @@ describe("Header", () => {
 
     expect(screen.getAllByText("Deep Cuts").length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: "My List" })).toHaveAttribute("href", "/list");
+    expect(screen.getByRole("link", { name: "Activity" })).toHaveAttribute("href", "/activity");
     expect(screen.getByRole("link", { name: "Add to List" })).toHaveAttribute(
       "href",
       "/list/search"

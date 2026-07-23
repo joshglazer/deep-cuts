@@ -22,6 +22,9 @@ export async function Header() {
           <Link href="/list" isStandalone hasUnderline={false} color="primary">
             My List
           </Link>
+          <Link href="/activity" isStandalone hasUnderline={false} color="primary">
+            Activity
+          </Link>
           <Button href="/list/search" size="sm" label="Add to List" />
         </HStack>
         <UserMenu
