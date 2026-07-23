@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
 const requireSpotifyUserIdOrRedirect = vi.fn();
 vi.mock("@/auth", () => ({ requireSpotifyUserIdOrRedirect }));
 
-const getStats = vi.fn();
-vi.mock("./statsData", () => ({ getStats }));
+const getListenEvents = vi.fn();
+vi.mock("./statsData", () => ({ getListenEvents }));
 
 // Header is an async server component and crashes when embedded as JSX under
 // client-side React (see PageShell.test.tsx) — stubbed so the real PageShell
@@ -14,16 +14,19 @@ vi.mock("@/components/Header", () => ({ Header: () => <header data-testid="heade
 
 const { default: StatsPage } = await import("./page");
 
+beforeEach(() => {
+  // A Wednesday, so week/month math below has a predictable "days into" count.
+  vi.setSystemTime(new Date("2024-06-12T10:00:00.000Z"));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 describe("StatsPage", () => {
   it("shows an empty state when there's no listening history", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    getStats.mockResolvedValue({
-      totalStreams: 0,
-      thisWeek: { count: 0, previousCount: 0 },
-      thisMonth: { count: 0, previousCount: 0 },
-      streakDays: 0,
-      heatmap: [],
-    });
+    getListenEvents.mockResolvedValue([]);
 
     render(await StatsPage());
 
@@ -32,18 +35,20 @@ describe("StatsPage", () => {
 
   it("renders stat tiles and the heatmap once there's listening history", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    getStats.mockResolvedValue({
-      totalStreams: 42,
-      thisWeek: { count: 5, previousCount: 3 },
-      thisMonth: { count: 20, previousCount: 10 },
-      streakDays: 3,
-      heatmap: [{ date: "2024-06-12", count: 1, level: 1, isFuture: false }],
-    });
+    getListenEvents.mockResolvedValue([
+      { playedAt: "2024-05-15T12:00:00.000Z" }, // previous month, outside the trend window
+      { playedAt: "2024-06-01T12:00:00.000Z" },
+      { playedAt: "2024-06-05T12:00:00.000Z" },
+      { playedAt: "2024-06-09T12:00:00.000Z" },
+      { playedAt: "2024-06-12T12:00:00.000Z" }, // today
+    ]);
 
     render(await StatsPage());
 
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getByText("Total songs streamed")).toBeInTheDocument();
+    expect(screen.getByText("5")).toBeInTheDocument(); // total songs streamed
     expect(screen.getByText("Day streak")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument(); // streak: only today is consecutive
+    expect(screen.getByText("Listening activity")).toBeInTheDocument();
   });
 });
