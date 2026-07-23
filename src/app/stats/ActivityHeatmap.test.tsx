@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import { ActivityHeatmap } from "./ActivityHeatmap";
-import type { HeatmapDay } from "./statsData";
+import type { HeatmapDay } from "./computeStats";
 
 function day(date: string, count: number, level: HeatmapDay["level"], isFuture = false): HeatmapDay {
   return { date, count, level, isFuture };

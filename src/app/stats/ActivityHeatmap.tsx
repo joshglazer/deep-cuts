@@ -1,4 +1,4 @@
-import type { HeatmapDay } from "./statsData";
+import { parseDateKey, type HeatmapDay } from "./computeStats";
 import { Card } from "@/design/atoms/Card";
 import { HStack, VStack } from "@/design/atoms/Stack";
 import { Text } from "@/design/atoms/Text";
@@ -18,12 +18,11 @@ const LEVEL_CLASSES: Record<HeatmapDay["level"], string> = {
   4: "bg-accent-bg",
 };
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", { month: "short", timeZone: "UTC" });
+const MONTH_FORMATTER = new Intl.DateTimeFormat("en-US", { month: "short" });
 const DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
   month: "long",
   day: "numeric",
   year: "numeric",
-  timeZone: "UTC",
 });
 
 function chunkIntoWeeks(days: HeatmapDay[]): HeatmapDay[][] {
@@ -38,7 +37,7 @@ function monthLabel(week: HeatmapDay[], previousWeek: HeatmapDay[] | undefined):
   const month = week[0].date.slice(0, 7);
   const previousMonth = previousWeek?.[0]?.date.slice(0, 7);
   if (month === previousMonth) return "";
-  return MONTH_FORMATTER.format(new Date(`${week[0].date}T00:00:00Z`));
+  return MONTH_FORMATTER.format(parseDateKey(week[0].date));
 }
 
 export function ActivityHeatmap({ days }: Readonly<ActivityHeatmapProps>) {
@@ -66,7 +65,7 @@ export function ActivityHeatmap({ days }: Readonly<ActivityHeatmapProps>) {
                     ) : (
                       <div
                         key={day.date}
-                        title={`${day.count} ${day.count === 1 ? "song" : "songs"} streamed on ${DAY_FORMATTER.format(new Date(`${day.date}T00:00:00Z`))}`}
+                        title={`${day.count} ${day.count === 1 ? "song" : "songs"} streamed on ${DAY_FORMATTER.format(parseDateKey(day.date))}`}
                         className={`h-3 w-3 rounded-sm border border-border ${LEVEL_CLASSES[day.level]}`}
                       />
                     )

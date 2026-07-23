@@ -1,4 +1,4 @@
-import type { TrendStat } from "./statsData";
+import type { TrendStat } from "./computeStats";
 import { TrendBadge } from "./TrendBadge";
 import { Card } from "@/design/atoms/Card";
 import { Heading } from "@/design/atoms/Heading";
