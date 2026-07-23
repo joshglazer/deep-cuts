@@ -44,6 +44,7 @@ describe("AlbumSearch", () => {
           name: "OK Computer",
           artistName: "Radiohead",
           totalTracks: 12,
+          albumType: "album",
         },
       ],
     });
@@ -90,6 +91,7 @@ describe("AlbumSearch", () => {
           name: "OK Computer",
           artistName: "Radiohead",
           totalTracks: 12,
+          albumType: "album",
         },
       ],
     });
@@ -109,5 +111,44 @@ describe("AlbumSearch", () => {
       container.querySelector('a[href="/list/search/artist/artist1"]')
     ).toBeInTheDocument();
     expect(screen.queryByText("OK Computer")).not.toBeInTheDocument();
+  });
+
+  it("hides singles by default and reveals them via the toggle", async () => {
+    search.mockResolvedValue({
+      artists: [],
+      albums: [
+        {
+          spotifyAlbumId: "album1",
+          spotifyArtistId: "artist1",
+          name: "OK Computer",
+          artistName: "Radiohead",
+          totalTracks: 12,
+          albumType: "album",
+        },
+        {
+          spotifyAlbumId: "single1",
+          spotifyArtistId: "artist1",
+          name: "Creep",
+          artistName: "Radiohead",
+          totalTracks: 1,
+          albumType: "single",
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<AlbumSearch />);
+
+    await user.type(
+      screen.getByRole("textbox", { name: "Search for an artist or album" }),
+      "radiohead"
+    );
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    expect((await screen.findAllByText("OK Computer")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Creep")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("switch", { name: "Include singles & other releases" }));
+
+    expect((await screen.findAllByText("Creep")).length).toBeGreaterThan(0);
   });
 });

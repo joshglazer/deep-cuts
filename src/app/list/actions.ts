@@ -19,6 +19,7 @@ export interface AlbumSearchResult {
   imageUrl?: string;
   releaseYear?: string;
   totalTracks: number;
+  albumType: "album" | "single" | "compilation";
 }
 
 export interface ArtistSearchResult {
@@ -36,6 +37,7 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
     imageUrl: album.images[0]?.url,
     releaseYear: album.release_date?.slice(0, 4),
     totalTracks: album.total_tracks,
+    albumType: album.album_type,
   };
 }
 

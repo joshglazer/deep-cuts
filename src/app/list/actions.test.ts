@@ -37,6 +37,7 @@ const spotifyAlbum = {
   artists: [{ id: "artist1", name: "Radiohead", images: [] }],
   release_date: "1997-05-21",
   total_tracks: 12,
+  album_type: "album" as const,
 };
 
 describe("search", () => {
@@ -70,6 +71,7 @@ describe("search", () => {
         imageUrl: "https://example.com/cover.jpg",
         releaseYear: "1997",
         totalTracks: 12,
+        albumType: "album",
       },
     ]);
   });
@@ -121,6 +123,7 @@ describe("addAlbum", () => {
     artistName: "Radiohead",
     imageUrl: "cover.jpg",
     totalTracks: 12,
+    albumType: "album" as const,
   };
 
   it("skips adding when the album is already on the user's list", async () => {

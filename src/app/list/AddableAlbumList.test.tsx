@@ -15,6 +15,7 @@ const album = {
   name: "OK Computer",
   artistName: "Radiohead",
   totalTracks: 12,
+  albumType: "album" as const,
 };
 
 describe("AddableAlbumList", () => {
