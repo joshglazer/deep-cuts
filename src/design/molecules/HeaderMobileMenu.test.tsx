@@ -19,6 +19,7 @@ describe("HeaderMobileMenu", () => {
 
     expect(screen.getByTestId("brand")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "My List" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Activity" })).toHaveAttribute("href", "/activity");
     expect(screen.getByRole("link", { name: "Add to List" })).toHaveAttribute("href", "/list/search");
     expect(screen.getByRole("link", { name: "Stats" })).toHaveAttribute("href", "/stats");
   });
