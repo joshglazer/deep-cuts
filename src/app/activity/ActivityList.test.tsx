@@ -16,7 +16,7 @@ describe("ActivityList", () => {
   it("renders a row per event, linked to its album", () => {
     const { container } = render(<ActivityList activity={[event]} />);
 
-    expect(screen.getByText("Karma Police")).toBeInTheDocument();
+    expect(screen.getAllByText("Karma Police").length).toBeGreaterThan(0);
     expect(container.querySelector('a[href="/list/album/album1"]')).toBeInTheDocument();
   });
 

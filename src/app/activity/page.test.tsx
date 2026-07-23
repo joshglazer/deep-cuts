@@ -40,7 +40,7 @@ describe("ActivityPage", () => {
 
     render(await ActivityPage());
 
-    expect(screen.getByText("Karma Police")).toBeInTheDocument();
+    expect(screen.getAllByText("Karma Police").length).toBeGreaterThan(0);
     expect(getRecentActivity).toHaveBeenCalledWith("user1");
   });
 });

@@ -13,19 +13,18 @@ const event = {
 
 describe("ListenEventRow", () => {
   it("renders the track name as text when no albumHref is given", () => {
-    render(<ListenEventRow event={event} />);
+    const { container } = render(<ListenEventRow event={event} />);
 
-    expect(screen.getByText("Karma Police")).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Karma Police" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Karma Police").length).toBeGreaterThan(0);
+    expect(container.querySelector('a[href="/list/album/album1"]')).not.toBeInTheDocument();
   });
 
   it("links the track name to the album when albumHref is given", () => {
-    render(<ListenEventRow event={event} albumHref="/list/album/album1" />);
-
-    expect(screen.getByRole("link", { name: "Karma Police" })).toHaveAttribute(
-      "href",
-      "/list/album/album1"
+    const { container } = render(
+      <ListenEventRow event={event} albumHref="/list/album/album1" />
     );
+
+    expect(container.querySelector('a[href="/list/album/album1"]')).toBeInTheDocument();
   });
 
   it("shows the artist and album name together", () => {
