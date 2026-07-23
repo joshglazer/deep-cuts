@@ -496,9 +496,11 @@ will show a reset play as if it still counted.
 
 Every current reader already does this — `getListenStatsByAlbum` and
 `getPlayedTrackDates` (`src/app/list/listenProgress.ts`), `getStats`
-(`src/app/stats/statsData.ts`), and poll-spotify's own completion-count
-seed (`amplify/functions/poll-spotify/handler.ts`) all filter with
-`if (event.excludedAt) continue;` (or equivalent) before counting a play.
+(`src/app/stats/statsData.ts`), `getRecentActivity`
+(`src/app/activity/activityData.ts`), and poll-spotify's own
+completion-count seed (`amplify/functions/poll-spotify/handler.ts`) all
+filter with `if (event.excludedAt) continue;` (or equivalent) before
+counting a play.
 If you add a new query against `ListenEvent` — a new stat, a new progress
 view, anything that lists or counts plays — filter out `excludedAt` rows
 the same way, and add a test asserting an excluded event is invisible to
