@@ -15,6 +15,7 @@ export interface SpotifyAlbum {
   /** ISO date, precision varies by release: "YYYY", "YYYY-MM", or "YYYY-MM-DD". */
   release_date: string;
   total_tracks: number;
+  album_type: "album" | "single" | "compilation";
 }
 
 const MAX_RATE_LIMIT_RETRIES = 3;
