@@ -15,6 +15,10 @@ export function createMockDataClient() {
         update: vi.fn(),
         delete: vi.fn(),
       },
+      Artist: {
+        list: vi.fn(),
+        delete: vi.fn(),
+      },
       ListenEvent: {
         listListenEventBySpotifyUserIdAndSpotifyAlbumId: vi.fn(),
         delete: vi.fn(),
@@ -23,6 +27,7 @@ export function createMockDataClient() {
         get: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        delete: vi.fn(),
       },
     },
   };

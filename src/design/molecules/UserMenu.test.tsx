@@ -28,6 +28,16 @@ describe("UserMenu", () => {
     expect(push).toHaveBeenCalledWith("/stats");
   });
 
+  it("navigates to /account when the My Account item is clicked", async () => {
+    const user = userEvent.setup();
+    render(<UserMenu name="Josh" onSignOut={vi.fn()} />);
+
+    await user.hover(screen.getByRole("button", { name: "Josh" }));
+    await user.click(screen.getByRole("menuitem", { name: "My Account", hidden: true }));
+
+    expect(push).toHaveBeenCalledWith("/account");
+  });
+
   it("calls onSignOut when the Sign out item is clicked", async () => {
     const onSignOut = vi.fn();
     const user = userEvent.setup();

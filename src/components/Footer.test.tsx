@@ -23,7 +23,7 @@ describe("Footer", () => {
     expect(screen.queryByText(/Listening activity may be delayed/)).not.toBeInTheDocument();
   });
 
-  it("always renders the project credit and source link", async () => {
+  it("always renders the project credit, privacy policy link, and source link", async () => {
     auth.mockResolvedValue(null);
 
     render(await Footer());
@@ -31,6 +31,10 @@ describe("Footer", () => {
     expect(screen.getByRole("link", { name: "Josh Glazer" })).toHaveAttribute(
       "href",
       "https://joshglazer.com"
+    );
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute(
+      "href",
+      "/privacy"
     );
     expect(screen.getByRole("link", { name: "Source Code" })).toHaveAttribute(
       "href",
