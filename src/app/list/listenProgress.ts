@@ -16,7 +16,7 @@ export async function getListenStatsByAlbum(
 
   const byAlbum = new Map<string, AlbumListenStats>();
   for (const event of events) {
-    if (!event.spotifyAlbumId) continue;
+    if (event.excludedAt || !event.spotifyAlbumId) continue;
     const stats = byAlbum.get(event.spotifyAlbumId) ?? { playedTrackIds: new Set<string>() };
     stats.playedTrackIds.add(event.spotifyTrackId);
     if (!stats.lastPlayedAt || event.playedAt > stats.lastPlayedAt) {
@@ -40,6 +40,7 @@ export async function getPlayedTrackDates(
 
   const playedAtByTrack = new Map<string, string>();
   for (const event of events) {
+    if (event.excludedAt) continue;
     const lastPlayedAt = playedAtByTrack.get(event.spotifyTrackId);
     if (!lastPlayedAt || event.playedAt > lastPlayedAt) {
       playedAtByTrack.set(event.spotifyTrackId, event.playedAt);

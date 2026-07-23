@@ -77,6 +77,26 @@ describe("getRecentActivity", () => {
     ]);
   });
 
+  it("skips events that have been excluded by a reset", async () => {
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [
+        { id: "e1", trackName: "Airbag", playedAt: "2024-01-01T00:00:00Z", spotifyAlbumId: "album1" },
+        {
+          id: "e2",
+          trackName: "Karma Police",
+          playedAt: "2024-01-03T00:00:00Z",
+          spotifyAlbumId: "album1",
+          excludedAt: "2024-01-04T00:00:00Z",
+        },
+      ],
+    });
+    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+
+    const result = await getRecentActivity("user1");
+
+    expect(result.map((item) => item.id)).toEqual(["e1"]);
+  });
+
   it("returns an empty list when there's no listening history", async () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [],

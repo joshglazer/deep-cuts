@@ -65,6 +65,15 @@ const schema = a
         spotifyArtistId: a.string(),
         trackName: a.string().required(),
         playedAt: a.datetime().required(),
+        // Set by resetTrackProgress/resetAlbumProgress instead of deleting
+        // the row outright. Keeping the row (rather than hard-deleting it)
+        // means poll-spotify's existing dedupe check — which matches on the
+        // exact spotifyTrackId+playedAt pair — still finds it and refuses to
+        // recreate it, even though Spotify's own recently-played history
+        // keeps serving that same play for a while after the reset. Every
+        // reader that counts "played" tracks (list/album/artist progress,
+        // stats) must filter these out.
+        excludedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()])
       // Otherwise every lookup here (list-page aggregate, track-list page,

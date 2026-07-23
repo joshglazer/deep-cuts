@@ -7,6 +7,14 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // "$amplify/env/poll-spotify" only exists after `npm run sandbox`
+      // generates .amplify/generated/env/poll-spotify.ts, which never
+      // happens in CI/local test runs. Unlike aws-amplify/etc, vi.mock alone
+      // can't stand in for it — Vite's import-analysis resolves the literal
+      // specifier before any mock factory gets a chance to intercept it —
+      // so this needs a real alias target instead. See
+      // src/test/pollSpotifyEnvStub.ts.
+      "$amplify/env/poll-spotify": path.resolve(__dirname, "./src/test/pollSpotifyEnvStub.ts"),
     },
   },
   test: {

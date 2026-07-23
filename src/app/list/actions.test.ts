@@ -198,7 +198,7 @@ describe("resetAlbumProgress", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("deletes listen events, clears completedAt, and revalidates all album paths", async () => {
+  it("soft-deletes listen events, clears completedAt, and revalidates all album paths", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
     mockDataClient.models.Album.get.mockResolvedValue({
       data: {
@@ -215,7 +215,16 @@ describe("resetAlbumProgress", () => {
 
     await resetAlbumProgress("row1");
 
-    expect(mockDataClient.models.ListenEvent.delete).toHaveBeenCalledTimes(2);
+    expect(mockDataClient.models.ListenEvent.delete).not.toHaveBeenCalled();
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenCalledTimes(2);
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenNthCalledWith(1, {
+      id: "event1",
+      excludedAt: expect.any(String),
+    });
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenNthCalledWith(2, {
+      id: "event2",
+      excludedAt: expect.any(String),
+    });
     expect(mockDataClient.models.Album.update).toHaveBeenCalledWith({
       id: "row1",
       completedAt: null,
@@ -223,6 +232,29 @@ describe("resetAlbumProgress", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/list");
     expect(revalidatePath).toHaveBeenCalledWith("/list/album/album1");
     expect(revalidatePath).toHaveBeenCalledWith("/list/artist/artist1");
+  });
+
+  it("skips events that were already excluded by an earlier reset", async () => {
+    requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
+    mockDataClient.models.Album.get.mockResolvedValue({
+      data: { id: "row1", spotifyUserId: "user1", spotifyAlbumId: "album1", completedAt: null },
+    });
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
+      {
+        data: [
+          { id: "event1", excludedAt: "2024-01-01T00:00:00.000Z" },
+          { id: "event2", excludedAt: null },
+        ],
+      }
+    );
+
+    await resetAlbumProgress("row1");
+
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenCalledTimes(1);
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenCalledWith({
+      id: "event2",
+      excludedAt: expect.any(String),
+    });
   });
 
   it("skips clearing completedAt when the album wasn't completed", async () => {
@@ -255,11 +287,24 @@ describe("resetTrackProgress", () => {
 
     await resetTrackProgress("album1", "track1");
 
+    expect(mockDataClient.models.ListenEvent.update).not.toHaveBeenCalled();
     expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("deletes only the matching track's events and clears completedAt if set", async () => {
+  it("does nothing when the matching track's only event was already excluded", async () => {
+    requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
+      { data: [{ id: "event1", spotifyTrackId: "track1", excludedAt: "2024-01-01T00:00:00.000Z" }] }
+    );
+
+    await resetTrackProgress("album1", "track1");
+
+    expect(mockDataClient.models.ListenEvent.update).not.toHaveBeenCalled();
+    expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
+  });
+
+  it("soft-deletes only the matching track's events and clears completedAt if set", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       {
@@ -281,8 +326,12 @@ describe("resetTrackProgress", () => {
 
     await resetTrackProgress("album1", "track1");
 
-    expect(mockDataClient.models.ListenEvent.delete).toHaveBeenCalledTimes(1);
-    expect(mockDataClient.models.ListenEvent.delete).toHaveBeenCalledWith({ id: "event1" });
+    expect(mockDataClient.models.ListenEvent.delete).not.toHaveBeenCalled();
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenCalledTimes(1);
+    expect(mockDataClient.models.ListenEvent.update).toHaveBeenCalledWith({
+      id: "event1",
+      excludedAt: expect.any(String),
+    });
     expect(mockDataClient.models.Album.update).toHaveBeenCalledWith({
       id: "row1",
       completedAt: null,

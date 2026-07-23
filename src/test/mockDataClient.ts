@@ -21,6 +21,7 @@ export function createMockDataClient() {
       },
       ListenEvent: {
         listListenEventBySpotifyUserIdAndSpotifyAlbumId: vi.fn(),
+        update: vi.fn(),
         delete: vi.fn(),
       },
       SpotifyAuth: {

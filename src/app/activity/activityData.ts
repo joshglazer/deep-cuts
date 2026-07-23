@@ -22,7 +22,8 @@ export async function getRecentActivity(spotifyUserId: string): Promise<RecentAc
 
   const albumsById = new Map(albums.map((album) => [album.spotifyAlbumId, album]));
 
-  return [...events]
+  return events
+    .filter((event) => !event.excludedAt)
     .sort((a, b) => b.playedAt.localeCompare(a.playedAt))
     .slice(0, RECENT_ACTIVITY_LIMIT)
     .map((event) => {
