@@ -34,6 +34,8 @@ export function UserMenu({ name, image, onSignOut }: Readonly<UserMenuProps>) {
         }}
         items={[
           { label: "Stats", onClick: () => router.push("/stats") },
+          { label: "My Account", onClick: () => router.push("/account") },
+          { type: "divider" },
           { label: "Sign out", onClick: onSignOut },
         ]}
       />
