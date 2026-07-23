@@ -1,7 +1,7 @@
-import { formatDate } from "@/lib/formatDate";
 import { spotifyAlbumUri } from "@/lib/spotifyLinks";
 import { HStack, StackItem, VStack } from "../atoms/Stack";
 import { Link } from "../atoms/Link";
+import { ListenEventTimestamp } from "./ListenEventTimestamp";
 import { Text } from "../atoms/Text";
 import { Thumbnail } from "../atoms/Thumbnail";
 
@@ -57,9 +57,7 @@ export function ListenEventRow({ event, albumHref }: Readonly<ListenEventRowProp
           )}
         </VStack>
       </StackItem>
-      <Text type="supporting" color="secondary" maxLines={1}>
-        {formatDate(playedAt)}
-      </Text>
+      <ListenEventTimestamp playedAt={playedAt} />
     </HStack>
   );
 }

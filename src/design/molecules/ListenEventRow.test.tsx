@@ -43,10 +43,11 @@ describe("ListenEventRow", () => {
     expect(screen.queryByText("·")).not.toBeInTheDocument();
   });
 
-  it("shows the played date", () => {
+  it("shows the played date and time", () => {
     render(<ListenEventRow event={event} />);
 
     expect(screen.getByText("March 5, 2024")).toBeInTheDocument();
+    expect(screen.getByText("12:00 AM")).toBeInTheDocument();
   });
 
   it("wraps the thumbnail in a Spotify deep link when spotifyAlbumId is present", () => {
