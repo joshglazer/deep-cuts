@@ -84,7 +84,7 @@ describe("search", () => {
 });
 
 describe("getArtistDiscography", () => {
-  it("dedupes albums by name, keeping the earliest release", async () => {
+  it("dedupes albums by name and type, keeping the earliest release", async () => {
     requireSignedIn.mockResolvedValue(undefined);
     getArtists.mockResolvedValue({
       artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
@@ -100,6 +100,21 @@ describe("getArtistDiscography", () => {
     expect(result.artistName).toBe("Radiohead");
     expect(result.imageUrl).toBe("artist.jpg");
     expect(result.albums.map((a) => a.spotifyAlbumId)).toEqual(["uk-release", "kid-a"]);
+  });
+
+  it("keeps an album and a single that share a name, since they're distinct releases", async () => {
+    requireSignedIn.mockResolvedValue(undefined);
+    getArtists.mockResolvedValue({
+      artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
+    });
+    getArtistAlbums.mockResolvedValue([
+      { ...spotifyAlbum, id: "the-album", album_type: "album", release_date: "1997-05-21" },
+      { ...spotifyAlbum, id: "the-single", album_type: "single", release_date: "1997-05-19" },
+    ]);
+
+    const result = await getArtistDiscography("artist1");
+
+    expect(result.albums.map((a) => a.spotifyAlbumId)).toEqual(["the-single", "the-album"]);
   });
 
   it("falls back to a generic name when the artist isn't found", async () => {

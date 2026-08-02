@@ -74,16 +74,19 @@ export async function getArtistDiscography(artistId: string): Promise<{
 
   // Spotify's artist-albums endpoint returns a separate entry per market
   // re-release, so dedupe by name, keeping the earliest release of each.
-  const byName = new Map<string, SpotifyAlbum>();
+  // Keyed on album_type too, since an album and a single can share a name
+  // (e.g. a title-track single from an LP of the same name) and are
+  // distinct releases that should both show up.
+  const byNameAndType = new Map<string, SpotifyAlbum>();
   for (const album of spotifyAlbums) {
-    const key = album.name.trim().toLowerCase();
-    const existing = byName.get(key);
+    const key = `${album.album_type}:${album.name.trim().toLowerCase()}`;
+    const existing = byNameAndType.get(key);
     if (!existing || album.release_date < existing.release_date) {
-      byName.set(key, album);
+      byNameAndType.set(key, album);
     }
   }
 
-  const albums = Array.from(byName.values())
+  const albums = Array.from(byNameAndType.values())
     .sort((a, b) => a.release_date.localeCompare(b.release_date))
     .map(toAlbumSearchResult);
 
