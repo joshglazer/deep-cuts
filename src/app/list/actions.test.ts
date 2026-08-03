@@ -98,6 +98,22 @@ describe("search", () => {
     expect(result.addedAlbumIds).toEqual(["album1"]);
   });
 
+  it("narrows addedAlbumIds to the current results, not the user's whole list", async () => {
+    requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue({ spotifyUserId: "user1" });
+    mockDataClient.models.Album.list.mockResolvedValue({
+      data: [{ spotifyAlbumId: "album1" }, { spotifyAlbumId: "some-other-album-in-my-library" }],
+    });
+    searchSpotify.mockResolvedValue({
+      artists: { items: [] },
+      albums: { items: [spotifyAlbum] },
+    });
+
+    const result = await search("radiohead");
+
+    expect(result.addedAlbumIds).toEqual(["album1"]);
+  });
+
   it("propagates the auth error when not signed in", async () => {
     requireSignedIn.mockRejectedValue(new Error("Not signed in"));
 
@@ -173,6 +189,24 @@ describe("getArtistDiscography", () => {
     expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
       filter: { spotifyUserId: { eq: "user1" } },
     });
+    expect(result.addedAlbumIds).toEqual(["kid-a"]);
+  });
+
+  it("narrows addedAlbumIds to this artist's albums, not the user's whole list", async () => {
+    requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue({ spotifyUserId: "user1" });
+    mockDataClient.models.Album.list.mockResolvedValue({
+      data: [{ spotifyAlbumId: "kid-a" }, { spotifyAlbumId: "some-other-artists-album" }],
+    });
+    getArtists.mockResolvedValue({
+      artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
+    });
+    getArtistAlbums.mockResolvedValue([
+      { ...spotifyAlbum, id: "kid-a", name: "Kid A", release_date: "2000-10-02" },
+    ]);
+
+    const result = await getArtistDiscography("artist1");
+
     expect(result.addedAlbumIds).toEqual(["kid-a"]);
   });
 });

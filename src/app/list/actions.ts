@@ -45,12 +45,19 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
 // no spotifyUserId, so there's nothing to check membership against there.
 // No secondary index on spotifyUserId yet (see list/page.tsx TODO), so this
 // is a full table scan like addAlbum's dedupe check below.
-async function getAddedAlbumIds(spotifyUserId: string | undefined): Promise<string[]> {
-  if (!spotifyUserId) return [];
+async function getUserAlbumIds(spotifyUserId: string | undefined): Promise<Set<string>> {
+  if (!spotifyUserId) return new Set();
   const { data } = await dataClient.models.Album.list({
     filter: { spotifyUserId: { eq: spotifyUserId } },
   });
-  return data.map((album) => album.spotifyAlbumId);
+  return new Set(data.map((album) => album.spotifyAlbumId));
+}
+
+// Narrows the user's full album-id set down to just the ids present in this
+// result page, rather than returning the whole set to the client — the
+// user's list only grows over time, while a result page stays small.
+function addedAlbumIdsIn(albums: AlbumSearchResult[], userAlbumIds: Set<string>): string[] {
+  return albums.map((album) => album.spotifyAlbumId).filter((id) => userAlbumIds.has(id));
 }
 
 export async function search(query: string): Promise<{
@@ -62,18 +69,19 @@ export async function search(query: string): Promise<{
   if (!query.trim()) return { artists: [], albums: [], addedAlbumIds: [] };
 
   const session = await auth();
-  const [{ artists, albums }, addedAlbumIds] = await Promise.all([
+  const [{ artists, albums }, userAlbumIds] = await Promise.all([
     searchSpotify(query),
-    getAddedAlbumIds(session?.spotifyUserId),
+    getUserAlbumIds(session?.spotifyUserId),
   ]);
+  const mappedAlbums = albums.items.map(toAlbumSearchResult);
   return {
     artists: artists.items.map((artist) => ({
       spotifyArtistId: artist.id,
       name: artist.name,
       imageUrl: artist.images[0]?.url,
     })),
-    albums: albums.items.map(toAlbumSearchResult),
-    addedAlbumIds,
+    albums: mappedAlbums,
+    addedAlbumIds: addedAlbumIdsIn(mappedAlbums, userAlbumIds),
   };
 }
 
@@ -86,10 +94,10 @@ export async function getArtistDiscography(artistId: string): Promise<{
   await requireSignedIn();
 
   const session = await auth();
-  const [{ artists }, spotifyAlbums, addedAlbumIds] = await Promise.all([
+  const [{ artists }, spotifyAlbums, userAlbumIds] = await Promise.all([
     getArtists([artistId]),
     getArtistAlbums(artistId),
-    getAddedAlbumIds(session?.spotifyUserId),
+    getUserAlbumIds(session?.spotifyUserId),
   ]);
   const artist = artists[0];
 
@@ -115,7 +123,7 @@ export async function getArtistDiscography(artistId: string): Promise<{
     artistName: artist?.name ?? "Artist",
     imageUrl: artist?.images[0]?.url,
     albums,
-    addedAlbumIds,
+    addedAlbumIds: addedAlbumIdsIn(albums, userAlbumIds),
   };
 }
 
