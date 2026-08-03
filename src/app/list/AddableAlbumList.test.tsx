@@ -27,8 +27,14 @@ describe("AddableAlbumList", () => {
     const addButton = screen.getByRole("button", { name: "Add" });
     await user.click(addButton);
 
-    expect(await screen.findByRole("button", { name: "Added" })).toBeDisabled();
+    expect(await screen.findByRole("button", { name: "Already added" })).toBeDisabled();
     expect(addAlbum).toHaveBeenCalledWith(album);
+  });
+
+  it("shows a disabled Already added button for albums already on the user's list", () => {
+    render(<AddableAlbumList albums={[album]} addedAlbumIds={["album1"]} />);
+
+    expect(screen.getByRole("button", { name: "Already added" })).toBeDisabled();
   });
 
   it("shows a dismissable error banner when adding fails", async () => {

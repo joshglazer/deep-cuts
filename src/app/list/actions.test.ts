@@ -7,7 +7,8 @@ const mockDataClient = dataClient as unknown as MockDataClient;
 
 const requireSignedIn = vi.fn();
 const requireSpotifyUserIdOrThrow = vi.fn();
-vi.mock("@/auth", () => ({ requireSignedIn, requireSpotifyUserIdOrThrow }));
+const auth = vi.fn();
+vi.mock("@/auth", () => ({ requireSignedIn, requireSpotifyUserIdOrThrow, auth }));
 
 const revalidatePath = vi.fn();
 vi.mock("next/cache", () => ({ revalidatePath }));
@@ -46,12 +47,13 @@ describe("search", () => {
 
     const result = await search("   ");
 
-    expect(result).toEqual({ artists: [], albums: [] });
+    expect(result).toEqual({ artists: [], albums: [], addedAlbumIds: [] });
     expect(searchSpotify).not.toHaveBeenCalled();
   });
 
   it("maps Spotify search results into the app's shapes", async () => {
     requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue(undefined);
     searchSpotify.mockResolvedValue({
       artists: { items: [{ id: "artist1", name: "Radiohead", images: [{ url: "a.jpg" }] }] },
       albums: { items: [spotifyAlbum] },
@@ -74,6 +76,26 @@ describe("search", () => {
         albumType: "album",
       },
     ]);
+    expect(result.addedAlbumIds).toEqual([]);
+  });
+
+  it("includes ids of albums already on the user's list in addedAlbumIds", async () => {
+    requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue({ spotifyUserId: "user1" });
+    mockDataClient.models.Album.list.mockResolvedValue({
+      data: [{ spotifyAlbumId: "album1" }],
+    });
+    searchSpotify.mockResolvedValue({
+      artists: { items: [] },
+      albums: { items: [spotifyAlbum] },
+    });
+
+    const result = await search("radiohead");
+
+    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
+      filter: { spotifyUserId: { eq: "user1" } },
+    });
+    expect(result.addedAlbumIds).toEqual(["album1"]);
   });
 
   it("propagates the auth error when not signed in", async () => {
@@ -86,6 +108,7 @@ describe("search", () => {
 describe("getArtistDiscography", () => {
   it("dedupes albums by name and type, keeping the earliest release", async () => {
     requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue(undefined);
     getArtists.mockResolvedValue({
       artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
     });
@@ -104,6 +127,7 @@ describe("getArtistDiscography", () => {
 
   it("keeps an album and a single that share a name, since they're distinct releases", async () => {
     requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue(undefined);
     getArtists.mockResolvedValue({
       artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
     });
@@ -119,6 +143,7 @@ describe("getArtistDiscography", () => {
 
   it("falls back to a generic name when the artist isn't found", async () => {
     requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue(undefined);
     getArtists.mockResolvedValue({ artists: [] });
     getArtistAlbums.mockResolvedValue([]);
 
@@ -127,6 +152,28 @@ describe("getArtistDiscography", () => {
     expect(result.artistName).toBe("Artist");
     expect(result.imageUrl).toBeUndefined();
     expect(result.albums).toEqual([]);
+    expect(result.addedAlbumIds).toEqual([]);
+  });
+
+  it("includes ids of albums already on the user's list in addedAlbumIds", async () => {
+    requireSignedIn.mockResolvedValue(undefined);
+    auth.mockResolvedValue({ spotifyUserId: "user1" });
+    mockDataClient.models.Album.list.mockResolvedValue({
+      data: [{ spotifyAlbumId: "kid-a" }],
+    });
+    getArtists.mockResolvedValue({
+      artists: [{ id: "artist1", name: "Radiohead", images: [{ url: "artist.jpg" }] }],
+    });
+    getArtistAlbums.mockResolvedValue([
+      { ...spotifyAlbum, id: "kid-a", name: "Kid A", release_date: "2000-10-02" },
+    ]);
+
+    const result = await getArtistDiscography("artist1");
+
+    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
+      filter: { spotifyUserId: { eq: "user1" } },
+    });
+    expect(result.addedAlbumIds).toEqual(["kid-a"]);
   });
 });
 

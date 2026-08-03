@@ -47,6 +47,7 @@ describe("AlbumSearch", () => {
           albumType: "album",
         },
       ],
+      addedAlbumIds: [],
     });
     const user = userEvent.setup();
     render(<AlbumSearch />);
@@ -59,6 +60,33 @@ describe("AlbumSearch", () => {
 
     expect(await screen.findByText("Radiohead")).toBeInTheDocument();
     expect(search).toHaveBeenCalledWith("radiohead");
+  });
+
+  it("shows a disabled Already added button for albums already on the user's list", async () => {
+    search.mockResolvedValue({
+      artists: [],
+      albums: [
+        {
+          spotifyAlbumId: "album1",
+          spotifyArtistId: "artist1",
+          name: "OK Computer",
+          artistName: "Radiohead",
+          totalTracks: 12,
+          albumType: "album",
+        },
+      ],
+      addedAlbumIds: ["album1"],
+    });
+    const user = userEvent.setup();
+    render(<AlbumSearch />);
+
+    await user.type(
+      screen.getByRole("textbox", { name: "Search for an artist or album" }),
+      "radiohead"
+    );
+    await user.click(screen.getByRole("button", { name: "Search" }));
+
+    expect(await screen.findByRole("button", { name: "Already added" })).toBeDisabled();
   });
 
   it("disables the search button until a query is entered", () => {
@@ -94,6 +122,7 @@ describe("AlbumSearch", () => {
           albumType: "album",
         },
       ],
+      addedAlbumIds: [],
     });
     const user = userEvent.setup();
     const { container } = render(<AlbumSearch />);
@@ -134,6 +163,7 @@ describe("AlbumSearch", () => {
           albumType: "single",
         },
       ],
+      addedAlbumIds: [],
     });
     const user = userEvent.setup();
     render(<AlbumSearch />);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
+import { auth, requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { albumHref, artistListHref } from "./routes";
 import {
@@ -41,14 +41,31 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
   };
 }
 
+// The preview-login path (see requireSignedIn's doc comment in auth.ts) has
+// no spotifyUserId, so there's nothing to check membership against there.
+// No secondary index on spotifyUserId yet (see list/page.tsx TODO), so this
+// is a full table scan like addAlbum's dedupe check below.
+async function getAddedAlbumIds(spotifyUserId: string | undefined): Promise<string[]> {
+  if (!spotifyUserId) return [];
+  const { data } = await dataClient.models.Album.list({
+    filter: { spotifyUserId: { eq: spotifyUserId } },
+  });
+  return data.map((album) => album.spotifyAlbumId);
+}
+
 export async function search(query: string): Promise<{
   artists: ArtistSearchResult[];
   albums: AlbumSearchResult[];
+  addedAlbumIds: string[];
 }> {
   await requireSignedIn();
-  if (!query.trim()) return { artists: [], albums: [] };
+  if (!query.trim()) return { artists: [], albums: [], addedAlbumIds: [] };
 
-  const { artists, albums } = await searchSpotify(query);
+  const session = await auth();
+  const [{ artists, albums }, addedAlbumIds] = await Promise.all([
+    searchSpotify(query),
+    getAddedAlbumIds(session?.spotifyUserId),
+  ]);
   return {
     artists: artists.items.map((artist) => ({
       spotifyArtistId: artist.id,
@@ -56,6 +73,7 @@ export async function search(query: string): Promise<{
       imageUrl: artist.images[0]?.url,
     })),
     albums: albums.items.map(toAlbumSearchResult),
+    addedAlbumIds,
   };
 }
 
@@ -63,12 +81,15 @@ export async function getArtistDiscography(artistId: string): Promise<{
   artistName: string;
   imageUrl?: string;
   albums: AlbumSearchResult[];
+  addedAlbumIds: string[];
 }> {
   await requireSignedIn();
 
-  const [{ artists }, spotifyAlbums] = await Promise.all([
+  const session = await auth();
+  const [{ artists }, spotifyAlbums, addedAlbumIds] = await Promise.all([
     getArtists([artistId]),
     getArtistAlbums(artistId),
+    getAddedAlbumIds(session?.spotifyUserId),
   ]);
   const artist = artists[0];
 
@@ -94,6 +115,7 @@ export async function getArtistDiscography(artistId: string): Promise<{
     artistName: artist?.name ?? "Artist",
     imageUrl: artist?.images[0]?.url,
     albums,
+    addedAlbumIds,
   };
 }
 
