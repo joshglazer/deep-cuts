@@ -50,7 +50,7 @@ function searchParams(params: { view?: string; sort?: string; completed?: string
 describe("ListPage", () => {
   it("shows an empty state when the user has no albums", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
@@ -62,7 +62,7 @@ describe("ListPage", () => {
 
   it("shows an all-caught-up empty state when every album is completed and completed is hidden", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [album({ completedAt: "2024-01-01" })],
     });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
@@ -76,7 +76,7 @@ describe("ListPage", () => {
 
   it("renders the album list by default", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [album()] });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
@@ -88,7 +88,7 @@ describe("ListPage", () => {
 
   it("groups albums by artist in artist view", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [
         album({ id: "row1", spotifyAlbumId: "album1", name: "OK Computer" }),
         album({ id: "row2", spotifyAlbumId: "album2", name: "Kid A" }),
@@ -107,7 +107,7 @@ describe("ListPage", () => {
 
   it("falls back to the album-cover image when the Spotify artist lookup fails", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [album()] });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );

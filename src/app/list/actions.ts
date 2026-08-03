@@ -43,12 +43,10 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
 
 // The preview-login path (see requireSignedIn's doc comment in auth.ts) has
 // no spotifyUserId, so there's nothing to check membership against there.
-// No secondary index on spotifyUserId yet (see list/page.tsx TODO), so this
-// is a full table scan like addAlbum's dedupe check below.
 async function getUserAlbumIds(spotifyUserId: string | undefined): Promise<Set<string>> {
   if (!spotifyUserId) return new Set();
-  const { data } = await dataClient.models.Album.list({
-    filter: { spotifyUserId: { eq: spotifyUserId } },
+  const { data } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+    spotifyUserId,
   });
   return new Set(data.map((album) => album.spotifyAlbumId));
 }
@@ -130,14 +128,11 @@ export async function getArtistDiscography(artistId: string): Promise<{
 export async function addAlbum(album: AlbumSearchResult) {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  // No secondary index on spotifyUserId yet (see list/page.tsx TODO), so
-  // this dedupe check is a full table scan like the rest of this page.
-  const { data: existing } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: spotifyUserId },
+  const { data: existing } =
+    await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
       spotifyAlbumId: { eq: album.spotifyAlbumId },
-    },
-  });
+    });
   if (existing.length > 0) return;
 
   await dataClient.models.Album.create({
@@ -229,15 +224,12 @@ export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId:
   const excluded = await excludeListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
   if (excluded === 0) return;
 
-  // Dropping below totalTracks means the album is no longer fully played —
-  // no secondary index on spotifyAlbumId alone, so this is a filtered scan
-  // like addAlbum's dedupe check above.
-  const { data: albums } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: spotifyUserId },
+  // Dropping below totalTracks means the album is no longer fully played.
+  const { data: albums } =
+    await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
       spotifyAlbumId: { eq: spotifyAlbumId },
-    },
-  });
+    });
   const album = albums[0];
   if (album?.completedAt) {
     await dataClient.models.Album.update({ id: album.id, completedAt: null });

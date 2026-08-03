@@ -82,7 +82,7 @@ describe("search", () => {
   it("includes ids of albums already on the user's list in addedAlbumIds", async () => {
     requireSignedIn.mockResolvedValue(undefined);
     auth.mockResolvedValue({ spotifyUserId: "user1" });
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ spotifyAlbumId: "album1" }],
     });
     searchSpotify.mockResolvedValue({
@@ -92,16 +92,16 @@ describe("search", () => {
 
     const result = await search("radiohead");
 
-    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
-      filter: { spotifyUserId: { eq: "user1" } },
-    });
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
     expect(result.addedAlbumIds).toEqual(["album1"]);
   });
 
   it("narrows addedAlbumIds to the current results, not the user's whole list", async () => {
     requireSignedIn.mockResolvedValue(undefined);
     auth.mockResolvedValue({ spotifyUserId: "user1" });
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ spotifyAlbumId: "album1" }, { spotifyAlbumId: "some-other-album-in-my-library" }],
     });
     searchSpotify.mockResolvedValue({
@@ -174,7 +174,7 @@ describe("getArtistDiscography", () => {
   it("includes ids of albums already on the user's list in addedAlbumIds", async () => {
     requireSignedIn.mockResolvedValue(undefined);
     auth.mockResolvedValue({ spotifyUserId: "user1" });
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ spotifyAlbumId: "kid-a" }],
     });
     getArtists.mockResolvedValue({
@@ -186,16 +186,16 @@ describe("getArtistDiscography", () => {
 
     const result = await getArtistDiscography("artist1");
 
-    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
-      filter: { spotifyUserId: { eq: "user1" } },
-    });
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
     expect(result.addedAlbumIds).toEqual(["kid-a"]);
   });
 
   it("narrows addedAlbumIds to this artist's albums, not the user's whole list", async () => {
     requireSignedIn.mockResolvedValue(undefined);
     auth.mockResolvedValue({ spotifyUserId: "user1" });
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ spotifyAlbumId: "kid-a" }, { spotifyAlbumId: "some-other-artists-album" }],
     });
     getArtists.mockResolvedValue({
@@ -224,7 +224,9 @@ describe("addAlbum", () => {
 
   it("skips adding when the album is already on the user's list", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [{ id: "existing" }] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [{ id: "existing" }],
+    });
 
     await addAlbum(album);
 
@@ -234,7 +236,9 @@ describe("addAlbum", () => {
 
   it("creates the album and revalidates /list when not already present", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [],
+    });
     mockDataClient.models.Album.create.mockResolvedValue({ data: {} });
 
     await addAlbum(album);
@@ -384,7 +388,9 @@ describe("resetTrackProgress", () => {
     await resetTrackProgress("album1", "track1");
 
     expect(mockDataClient.models.ListenEvent.update).not.toHaveBeenCalled();
-    expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
@@ -397,7 +403,9 @@ describe("resetTrackProgress", () => {
     await resetTrackProgress("album1", "track1");
 
     expect(mockDataClient.models.ListenEvent.update).not.toHaveBeenCalled();
-    expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).not.toHaveBeenCalled();
   });
 
   it("soft-deletes only the matching track's events and clears completedAt if set", async () => {
@@ -410,7 +418,7 @@ describe("resetTrackProgress", () => {
         ],
       }
     );
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [
         {
           id: "row1",
