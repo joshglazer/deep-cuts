@@ -43,6 +43,15 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
 
 // The preview-login path (see requireSignedIn's doc comment in auth.ts) has
 // no spotifyUserId, so there's nothing to check membership against there.
+//
+// Fetches the user's whole album-id set rather than querying just the
+// current search/discography result ids, since DynamoDB's Query API (and
+// this Amplify Data SDK's filter types) has no "spotifyAlbumId IN (...)"
+// condition — only a single eq/range condition per query. At real-world
+// list sizes this is still one cheap indexed query scoped to the user's own
+// partition, not a scan. If it ever needs to shrink further, the fallback is
+// N parallel per-id queries via listAlbumBySpotifyUserIdAndSpotifyAlbumId
+// (Promise.all over the result ids) instead of this single bulk fetch.
 async function getUserAlbumIds(spotifyUserId: string | undefined): Promise<Set<string>> {
   if (!spotifyUserId) return new Set();
   const { data } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
