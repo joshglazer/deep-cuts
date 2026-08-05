@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
+import { listAllListenEvents } from "@/lib/listenEvents";
 import { albumHref, artistListHref } from "./routes";
 import {
   search as searchSpotify,
@@ -148,11 +149,10 @@ async function excludeListenEvents(
   spotifyAlbumId: string,
   spotifyTrackId?: string
 ): Promise<number> {
-  const { data: events } =
-    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-      spotifyAlbumId: { eq: spotifyAlbumId },
-    });
+  const events = await listAllListenEvents({
+    spotifyUserId,
+    spotifyAlbumId: { eq: spotifyAlbumId },
+  });
   const matches = (
     spotifyTrackId ? events.filter((event) => event.spotifyTrackId === spotifyTrackId) : events
   ).filter((event) => !event.excludedAt);

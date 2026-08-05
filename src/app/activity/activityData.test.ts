@@ -50,7 +50,7 @@ describe("getRecentActivity", () => {
     ]);
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
-    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" }, { nextToken: undefined });
     expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
       filter: { spotifyUserId: { eq: "user1" } },
     });

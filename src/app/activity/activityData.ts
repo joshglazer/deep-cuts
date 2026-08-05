@@ -1,4 +1,5 @@
 import { dataClient } from "@/lib/amplify-server";
+import { listAllListenEvents } from "@/lib/listenEvents";
 
 export interface RecentActivityItem {
   id: string;
@@ -13,10 +14,8 @@ export interface RecentActivityItem {
 const RECENT_ACTIVITY_LIMIT = 50;
 
 export async function getRecentActivity(spotifyUserId: string): Promise<RecentActivityItem[]> {
-  const [{ data: events }, { data: albums }] = await Promise.all([
-    dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-    }),
+  const [events, { data: albums }] = await Promise.all([
+    listAllListenEvents({ spotifyUserId }),
     dataClient.models.Album.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
   ]);
 

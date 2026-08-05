@@ -1,4 +1,4 @@
-import { dataClient } from "@/lib/amplify-server";
+import { listAllListenEvents } from "@/lib/listenEvents";
 
 export interface AlbumListenStats {
   playedTrackIds: Set<string>;
@@ -9,10 +9,7 @@ export interface AlbumListenStats {
 export async function getListenStatsByAlbum(
   spotifyUserId: string
 ): Promise<Map<string, AlbumListenStats>> {
-  const { data: events } =
-    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-    });
+  const events = await listAllListenEvents({ spotifyUserId });
 
   const byAlbum = new Map<string, AlbumListenStats>();
   for (const event of events) {
@@ -32,11 +29,10 @@ export async function getPlayedTrackDates(
   spotifyUserId: string,
   spotifyAlbumId: string
 ): Promise<Map<string, string>> {
-  const { data: events } =
-    await dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-      spotifyAlbumId: { eq: spotifyAlbumId },
-    });
+  const events = await listAllListenEvents({
+    spotifyUserId,
+    spotifyAlbumId: { eq: spotifyAlbumId },
+  });
 
   const playedAtByTrack = new Map<string, string>();
   for (const event of events) {

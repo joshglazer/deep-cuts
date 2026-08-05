@@ -30,7 +30,7 @@ describe("getListenStatsByAlbum", () => {
     });
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
-    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" }, { nextToken: undefined });
   });
 
   it("skips events that have been excluded by a reset", async () => {
@@ -52,6 +52,35 @@ describe("getListenStatsByAlbum", () => {
       playedTrackIds: new Set(["t1"]),
       lastPlayedAt: "2024-01-01T00:00:00Z",
     });
+  });
+
+  it("drains every page so albums on later pages aren't dropped", async () => {
+    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
+      .mockResolvedValueOnce({
+        data: [{ spotifyAlbumId: "album1", spotifyTrackId: "t1", playedAt: "2024-01-01T00:00:00Z" }],
+        nextToken: "page2",
+      })
+      .mockResolvedValueOnce({
+        data: [{ spotifyAlbumId: "album2", spotifyTrackId: "t2", playedAt: "2024-01-02T00:00:00Z" }],
+        nextToken: null,
+      });
+
+    const result = await getListenStatsByAlbum("user1");
+
+    expect(result.get("album1")).toEqual({
+      playedTrackIds: new Set(["t1"]),
+      lastPlayedAt: "2024-01-01T00:00:00Z",
+    });
+    expect(result.get("album2")).toEqual({
+      playedTrackIds: new Set(["t2"]),
+      lastPlayedAt: "2024-01-02T00:00:00Z",
+    });
+    expect(
+      mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenNthCalledWith(1, { spotifyUserId: "user1" }, { nextToken: undefined });
+    expect(
+      mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenNthCalledWith(2, { spotifyUserId: "user1" }, { nextToken: "page2" });
   });
 
   it("skips events with no spotifyAlbumId", async () => {
@@ -91,7 +120,10 @@ describe("getPlayedTrackDates", () => {
     expect(result.get("t2")).toBe("2024-01-02T00:00:00Z");
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
-    ).toHaveBeenCalledWith({ spotifyUserId: "user1", spotifyAlbumId: { eq: "album1" } });
+    ).toHaveBeenCalledWith(
+      { spotifyUserId: "user1", spotifyAlbumId: { eq: "album1" } },
+      { nextToken: undefined }
+    );
   });
 
   it("skips events that have been excluded by a reset", async () => {

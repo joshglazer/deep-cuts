@@ -2,16 +2,15 @@
 
 import { requireSpotifyUserIdOrThrow, signOut } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
+import { listAllListenEvents } from "@/lib/listenEvents";
 
 export async function deleteAccount() {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  const [{ data: albums }, { data: artists }, { data: listenEvents }] = await Promise.all([
+  const [{ data: albums }, { data: artists }, listenEvents] = await Promise.all([
     dataClient.models.Album.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
     dataClient.models.Artist.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
-    dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
-      spotifyUserId,
-    }),
+    listAllListenEvents({ spotifyUserId }),
   ]);
 
   await Promise.all([
