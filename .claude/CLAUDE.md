@@ -494,13 +494,23 @@ the full mechanism). That means the row still physically exists — anything
 that queries `ListenEvent` and doesn't explicitly skip `excludedAt` rows
 will show a reset play as if it still counted.
 
-Every current reader already does this — `getListenStatsByAlbum` and
-`getPlayedTrackDates` (`src/app/list/listenProgress.ts`), `getStats`
+Every current direct reader of `ListenEvent` already does this —
+`getPlayedTrackDates` (`src/app/list/listenProgress.ts`), `getListenEvents`
 (`src/app/stats/statsData.ts`), `getRecentActivity`
-(`src/app/activity/activityData.ts`), and poll-spotify's own
-completion-count seed (`amplify/functions/poll-spotify/handler.ts`) all
-filter with `if (event.excludedAt) continue;` (or equivalent) before
-counting a play.
+(`src/app/activity/activityData.ts`), and `excludeListenEvents` itself when
+it recomputes an album's remaining `playedTrackIds` after a reset
+(`src/app/list/actions.ts`) — all filter with `if (event.excludedAt)
+continue;` (or equivalent) before counting a play.
+
+List/artist progress is the one exception worth calling out: it no longer
+reads `ListenEvent` at read time at all. `Album.playedTrackIds`/
+`lastPlayedAt` are a denormalized cache (see the comment on those fields in
+`amplify/data/resource.ts`) written only by `excludeListenEvents` (above)
+and by poll-spotify, which seeds from the already-`excludedAt`-filtered
+`Album.playedTrackIds` rather than rescanning `ListenEvent` itself — so it
+stays correct by construction as long as every *writer* of that cache keeps
+filtering, not because every reader does.
+
 If you add a new query against `ListenEvent` — a new stat, a new progress
 view, anything that lists or counts plays — filter out `excludedAt` rows
 the same way, and add a test asserting an excluded event is invisible to

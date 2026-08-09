@@ -28,30 +28,21 @@ const baseAlbum = {
 
 describe("AlbumList", () => {
   it("renders a row per album, linked to its album and artist pages", () => {
-    const { container } = render(<AlbumList albums={[baseAlbum]} listenStatsByAlbum={new Map()} />);
+    const { container } = render(<AlbumList albums={[baseAlbum]} />);
 
     expect(screen.getAllByText("OK Computer").length).toBeGreaterThan(0);
     expect(container.querySelector('a[href="/list/album/album1"]')).toBeInTheDocument();
     expect(container.querySelector('a[href="/list/artist/artist1"]')).toBeInTheDocument();
   });
 
-  it("derives played-track progress from listenStatsByAlbum", () => {
-    const listenStatsByAlbum = new Map([
-      ["album1", { playedTrackIds: new Set(["t1", "t2", "t3"]), lastPlayedAt: "2024-01-01" }],
-    ]);
-
-    render(<AlbumList albums={[baseAlbum]} listenStatsByAlbum={listenStatsByAlbum} />);
+  it("derives played-track progress from the album's playedTrackIds", () => {
+    render(<AlbumList albums={[{ ...baseAlbum, playedTrackIds: ["t1", "t2", "t3"] }]} />);
 
     expect(screen.getByText("3/12 tracks")).toBeInTheDocument();
   });
 
   it("omits progress when the album has no totalTracks", () => {
-    render(
-      <AlbumList
-        albums={[{ ...baseAlbum, totalTracks: null }]}
-        listenStatsByAlbum={new Map()}
-      />
-    );
+    render(<AlbumList albums={[{ ...baseAlbum, totalTracks: null }]} />);
 
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
   });

@@ -213,7 +213,7 @@ describe("resetAlbumProgress", () => {
     ).not.toHaveBeenCalled();
   });
 
-  it("soft-deletes listen events, clears completedAt, and revalidates all album paths", async () => {
+  it("soft-deletes listen events, clears completedAt and playedTrackIds, and revalidates all album paths", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
     mockDataClient.models.Album.get.mockResolvedValue({
       data: {
@@ -225,7 +225,12 @@ describe("resetAlbumProgress", () => {
       },
     });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [{ id: "event1" }, { id: "event2" }] }
+      {
+        data: [
+          { id: "event1", spotifyTrackId: "track1", playedAt: "2024-01-01T00:00:00.000Z" },
+          { id: "event2", spotifyTrackId: "track2", playedAt: "2024-01-02T00:00:00.000Z" },
+        ],
+      }
     );
 
     await resetAlbumProgress("row1");
@@ -240,8 +245,12 @@ describe("resetAlbumProgress", () => {
       id: "event2",
       excludedAt: expect.any(String),
     });
+    // Resetting the whole album excludes every active event, so no track
+    // stays played.
     expect(mockDataClient.models.Album.update).toHaveBeenCalledWith({
       id: "row1",
+      playedTrackIds: [],
+      lastPlayedAt: undefined,
       completedAt: null,
     });
     expect(revalidatePath).toHaveBeenCalledWith("/list");
@@ -319,13 +328,13 @@ describe("resetTrackProgress", () => {
     expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
   });
 
-  it("soft-deletes only the matching track's events and clears completedAt if set", async () => {
+  it("soft-deletes only the matching track's events, keeping the other track's progress intact", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       {
         data: [
-          { id: "event1", spotifyTrackId: "track1" },
-          { id: "event2", spotifyTrackId: "track2" },
+          { id: "event1", spotifyTrackId: "track1", playedAt: "2024-01-01T00:00:00.000Z" },
+          { id: "event2", spotifyTrackId: "track2", playedAt: "2024-01-02T00:00:00.000Z" },
         ],
       }
     );
@@ -349,6 +358,8 @@ describe("resetTrackProgress", () => {
     });
     expect(mockDataClient.models.Album.update).toHaveBeenCalledWith({
       id: "row1",
+      playedTrackIds: ["track2"],
+      lastPlayedAt: "2024-01-02T00:00:00.000Z",
       completedAt: null,
     });
     expect(revalidatePath).toHaveBeenCalledWith("/list/artist/artist1");

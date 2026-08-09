@@ -1,5 +1,3 @@
-import type { AlbumListenStats } from "./listenProgress";
-
 export type AlbumSort = "recently-played" | "recently-added" | "artist" | "album";
 
 export const DEFAULT_ALBUM_SORT: AlbumSort = "recently-played";
@@ -27,13 +25,10 @@ export interface SortableAlbum {
   artistName: string;
   addedAt: string;
   spotifyAlbumId: string;
+  lastPlayedAt?: string | null;
 }
 
-export function sortAlbums<T extends SortableAlbum>(
-  albums: T[],
-  sort: AlbumSort,
-  listenStatsByAlbum: Map<string, AlbumListenStats>
-): T[] {
+export function sortAlbums<T extends SortableAlbum>(albums: T[], sort: AlbumSort): T[] {
   const sorted = albums.slice();
   switch (sort) {
     case "recently-added":
@@ -41,8 +36,8 @@ export function sortAlbums<T extends SortableAlbum>(
       break;
     case "recently-played":
       sorted.sort((a, b) => {
-        const aPlayedAt = listenStatsByAlbum.get(a.spotifyAlbumId)?.lastPlayedAt;
-        const bPlayedAt = listenStatsByAlbum.get(b.spotifyAlbumId)?.lastPlayedAt;
+        const aPlayedAt = a.lastPlayedAt;
+        const bPlayedAt = b.lastPlayedAt;
         // Albums with no listen history yet sort after ones that have been
         // played, ordered among themselves by most recently added.
         if (aPlayedAt && bPlayedAt) return bPlayedAt.localeCompare(aPlayedAt);

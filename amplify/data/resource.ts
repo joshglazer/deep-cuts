@@ -47,6 +47,16 @@ const schema = a
         // still active. Kept distinct from a hard delete so completed albums
         // stay visible behind the list page's "show completed" toggle.
         completedAt: a.datetime(),
+        // Denormalized cache of this album's played tracks, kept in sync by
+        // poll-spotify and by resetTrackProgress/resetAlbumProgress — lets
+        // the list/artist pages read progress straight off Album.list()
+        // instead of scanning ListenEvent (unbounded by a user's total play
+        // count) on every page load. Albums that existed before this field
+        // was added need a one-time backfill (see
+        // scripts/backfill-album-progress.py) or they'll read as unplayed
+        // until their next new play.
+        playedTrackIds: a.string().array(),
+        lastPlayedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()]),
 
@@ -71,8 +81,10 @@ const schema = a
         // exact spotifyTrackId+playedAt pair — still finds it and refuses to
         // recreate it, even though Spotify's own recently-played history
         // keeps serving that same play for a while after the reset. Every
-        // reader that counts "played" tracks (list/album/artist progress,
-        // stats) must filter these out.
+        // direct reader of this table (album-detail track dates, stats,
+        // activity, the reset actions, poll-spotify's dedupe check) must
+        // filter these out — list/artist progress no longer reads this table
+        // at all, see Album.playedTrackIds above.
         excludedAt: a.datetime(),
       })
       .authorization((allow) => [allow.publicApiKey()])

@@ -137,18 +137,25 @@ export async function removeAlbum(id: string) {
   revalidatePath("/list");
 }
 
+interface ExcludeListenEventsResult {
+  excludedCount: number;
+  playedTrackIds: string[];
+  lastPlayedAt?: string;
+}
+
 /**
  * Soft-deletes this user's listen events for an album, optionally narrowed
  * to a single track, by stamping excludedAt rather than deleting the row —
  * see the ListenEvent.excludedAt comment in amplify/data/resource.ts for why.
- * Returns the number excluded so callers can bail out when there was
- * nothing to reset.
+ * Also returns the album's remaining played-track state (computed in memory
+ * from the same query rather than a second round-trip) so callers can keep
+ * Album.playedTrackIds/lastPlayedAt in sync.
  */
 async function excludeListenEvents(
   spotifyUserId: string,
   spotifyAlbumId: string,
   spotifyTrackId?: string
-): Promise<number> {
+): Promise<ExcludeListenEventsResult> {
   const events = await listAllListenEvents({
     spotifyUserId,
     spotifyAlbumId: { eq: spotifyAlbumId },
@@ -156,12 +163,21 @@ async function excludeListenEvents(
   const matches = (
     spotifyTrackId ? events.filter((event) => event.spotifyTrackId === spotifyTrackId) : events
   ).filter((event) => !event.excludedAt);
+  const matchIds = new Set(matches.map((event) => event.id));
 
   const excludedAt = new Date().toISOString();
   await Promise.all(
     matches.map((event) => dataClient.models.ListenEvent.update({ id: event.id, excludedAt }))
   );
-  return matches.length;
+
+  const remaining = events.filter((event) => !event.excludedAt && !matchIds.has(event.id));
+  const playedTrackIds = Array.from(new Set(remaining.map((event) => event.spotifyTrackId)));
+  const lastPlayedAt = remaining.reduce<string | undefined>(
+    (latest, event) => (!latest || event.playedAt > latest ? event.playedAt : latest),
+    undefined
+  );
+
+  return { excludedCount: matches.length, playedTrackIds, lastPlayedAt };
 }
 
 // Every surface showing this album's progress: the list page, the artist's
@@ -184,11 +200,18 @@ export async function resetAlbumProgress(id: string) {
     return;
   }
 
-  await excludeListenEvents(spotifyUserId, album.spotifyAlbumId);
+  const { excludedCount, playedTrackIds, lastPlayedAt } = await excludeListenEvents(
+    spotifyUserId,
+    album.spotifyAlbumId
+  );
+  if (excludedCount === 0 && !album.completedAt) return;
 
-  if (album.completedAt) {
-    await dataClient.models.Album.update({ id: album.id, completedAt: null });
-  }
+  await dataClient.models.Album.update({
+    id: album.id,
+    playedTrackIds,
+    lastPlayedAt,
+    completedAt: null,
+  });
 
   revalidateAlbumPaths(album.spotifyAlbumId, album.spotifyArtistId);
 }
@@ -196,8 +219,12 @@ export async function resetAlbumProgress(id: string) {
 export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId: string) {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  const excluded = await excludeListenEvents(spotifyUserId, spotifyAlbumId, spotifyTrackId);
-  if (excluded === 0) return;
+  const { excludedCount, playedTrackIds, lastPlayedAt } = await excludeListenEvents(
+    spotifyUserId,
+    spotifyAlbumId,
+    spotifyTrackId
+  );
+  if (excludedCount === 0) return;
 
   // Dropping below totalTracks means the album is no longer fully played —
   // no secondary index on spotifyAlbumId alone, so this is a filtered scan
@@ -209,8 +236,13 @@ export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId:
     },
   });
   const album = albums[0];
-  if (album?.completedAt) {
-    await dataClient.models.Album.update({ id: album.id, completedAt: null });
+  if (album) {
+    await dataClient.models.Album.update({
+      id: album.id,
+      playedTrackIds,
+      lastPlayedAt,
+      completedAt: null,
+    });
   }
 
   revalidateAlbumPaths(spotifyAlbumId, album?.spotifyArtistId);

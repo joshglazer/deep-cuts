@@ -237,7 +237,9 @@ describe("pollUser (via handler)", () => {
     client.models.SpotifyAuth.list.mockResolvedValue({ data: oneUser });
     mockNoOpDefaults();
     // Reports t2 as freshly played; t1's only record is excluded (reset), so
-    // the album should stay at 1/2 played rather than reading as complete.
+    // the album should stay at 1/2 played rather than reading as complete —
+    // t1 was never folded into Album.playedTrackIds in the first place since
+    // it was reset before any poll observed it as active.
     getRecentlyPlayed.mockResolvedValue({
       items: [recentlyPlayedItem({ trackId: "t2", albumId: "album1", playedAt: "2024-01-05T00:00:00Z" })],
     });
@@ -257,7 +259,12 @@ describe("pollUser (via handler)", () => {
 
     await handler({}, {} as never, vi.fn());
 
-    expect(client.models.Album.update).not.toHaveBeenCalled();
+    expect(client.models.Album.update).toHaveBeenCalledWith({
+      id: "row1",
+      playedTrackIds: ["t2"],
+      lastPlayedAt: "2024-01-05T00:00:00Z",
+      completedAt: undefined,
+    });
   });
 
   it("marks an album complete once every track has an active (non-excluded) play", async () => {
@@ -266,11 +273,17 @@ describe("pollUser (via handler)", () => {
     getRecentlyPlayed.mockResolvedValue({
       items: [recentlyPlayedItem({ trackId: "t2", albumId: "album1", playedAt: "2024-01-05T00:00:00Z" })],
     });
+    // t1 was already recorded on a previous poll, seeded via Album.playedTrackIds.
     client.models.Album.list.mockResolvedValue({
-      data: [{ id: "row1", spotifyAlbumId: "album1", totalTracks: 2, completedAt: null }],
-    });
-    client.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
-      data: [{ spotifyTrackId: "t1", playedAt: "2024-01-01T00:00:00Z", spotifyAlbumId: "album1" }],
+      data: [
+        {
+          id: "row1",
+          spotifyAlbumId: "album1",
+          totalTracks: 2,
+          completedAt: null,
+          playedTrackIds: ["t1"],
+        },
+      ],
     });
 
     await handler({}, {} as never, vi.fn());
@@ -280,18 +293,31 @@ describe("pollUser (via handler)", () => {
     );
   });
 
-  it("doesn't re-check completion for an album that's already marked complete", async () => {
+  it("keeps playedTrackIds/lastPlayedAt in sync for an already-completed album without re-deriving completedAt", async () => {
     client.models.SpotifyAuth.list.mockResolvedValue({ data: oneUser });
     mockNoOpDefaults();
     getRecentlyPlayed.mockResolvedValue({
       items: [recentlyPlayedItem({ trackId: "t1", albumId: "album1", playedAt: "2024-01-05T00:00:00Z" })],
     });
     client.models.Album.list.mockResolvedValue({
-      data: [{ id: "row1", spotifyAlbumId: "album1", totalTracks: 1, completedAt: "2023-12-31T00:00:00Z" }],
+      data: [
+        {
+          id: "row1",
+          spotifyAlbumId: "album1",
+          totalTracks: 1,
+          completedAt: "2023-12-31T00:00:00Z",
+          playedTrackIds: ["t1"],
+        },
+      ],
     });
 
     await handler({}, {} as never, vi.fn());
 
-    expect(client.models.Album.update).not.toHaveBeenCalled();
+    expect(client.models.Album.update).toHaveBeenCalledWith({
+      id: "row1",
+      playedTrackIds: ["t1"],
+      lastPlayedAt: "2024-01-05T00:00:00Z",
+      completedAt: "2023-12-31T00:00:00Z",
+    });
   });
 });

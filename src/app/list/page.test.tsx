@@ -51,9 +51,6 @@ describe("ListPage", () => {
   it("shows an empty state when the user has no albums", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
     mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
 
     render(await ListPage({ searchParams: searchParams() }));
 
@@ -65,9 +62,6 @@ describe("ListPage", () => {
     mockDataClient.models.Album.list.mockResolvedValue({
       data: [album({ completedAt: "2024-01-01" })],
     });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
 
     render(await ListPage({ searchParams: searchParams() }));
 
@@ -77,9 +71,6 @@ describe("ListPage", () => {
   it("renders the album list by default", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
     mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
 
     render(await ListPage({ searchParams: searchParams() }));
 
@@ -94,9 +85,6 @@ describe("ListPage", () => {
         album({ id: "row2", spotifyAlbumId: "album2", name: "Kid A" }),
       ],
     });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
     getArtists.mockResolvedValue({ artists: [] });
 
     render(await ListPage({ searchParams: searchParams({ view: "artist" }) }));
@@ -108,9 +96,6 @@ describe("ListPage", () => {
   it("falls back to the album-cover image when the Spotify artist lookup fails", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
     mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
     getArtists.mockRejectedValue(new Error("Spotify unavailable"));
 
     render(await ListPage({ searchParams: searchParams({ view: "artist" }) }));
