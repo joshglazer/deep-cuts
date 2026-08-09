@@ -14,10 +14,10 @@ const { deleteAccount } = await import("./actions");
 describe("deleteAccount", () => {
   it("deletes every album, artist, listen event, and the stored refresh token, then signs out", async () => {
     requireSpotifyUserIdOrThrow.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ id: "album-row1" }, { id: "album-row2" }],
     });
-    mockDataClient.models.Artist.list.mockResolvedValue({
+    mockDataClient.models.Artist.listArtistBySpotifyUserId.mockResolvedValue({
       data: [{ id: "artist-row1" }],
     });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
@@ -26,11 +26,11 @@ describe("deleteAccount", () => {
 
     await deleteAccount();
 
-    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
-      filter: { spotifyUserId: { eq: "user1" } },
-    });
-    expect(mockDataClient.models.Artist.list).toHaveBeenCalledWith({
-      filter: { spotifyUserId: { eq: "user1" } },
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
+    expect(mockDataClient.models.Artist.listArtistBySpotifyUserId).toHaveBeenCalledWith({
+      spotifyUserId: "user1",
     });
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
@@ -60,7 +60,9 @@ describe("deleteAccount", () => {
 
     await expect(deleteAccount()).rejects.toThrow("Not signed in");
 
-    expect(mockDataClient.models.Album.list).not.toHaveBeenCalled();
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).not.toHaveBeenCalled();
     expect(signOut).not.toHaveBeenCalled();
   });
 });

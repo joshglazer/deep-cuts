@@ -36,11 +36,9 @@ export default async function AlbumTracksPage({ params }: Readonly<AlbumTracksPa
   const [album, playedTrackDates, { data: listedAlbums }] = await Promise.all([
     getAlbum(albumId).catch(() => null),
     getPlayedTrackDates(spotifyUserId, albumId),
-    dataClient.models.Album.list({
-      filter: {
-        spotifyUserId: { eq: spotifyUserId },
-        spotifyAlbumId: { eq: albumId },
-      },
+    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
+      spotifyAlbumId: { eq: albumId },
     }),
   ]);
   const completedAt = listedAlbums[0]?.completedAt;

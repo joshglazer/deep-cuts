@@ -5,12 +5,14 @@ import { addAlbum, type AlbumSearchResult } from "./actions";
 
 /**
  * Add-to-list state shared by the search page and the artist discography
- * page. `addedIds` is local rather than re-read from the server because
+ * page. `addedIds` starts from `initialAddedIds` (albums already on the
+ * user's list, per the search/discography server actions) and grows
+ * locally rather than re-reading from the server on each add, since
  * neither page re-fetches after an add — the row just switches to its
- * "Added" state in place.
+ * "Already added" state in place.
  */
-export function useAddAlbum() {
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+export function useAddAlbum(initialAddedIds: string[] = []) {
+  const [addedIds, setAddedIds] = useState<Set<string>>(() => new Set(initialAddedIds));
   const [error, setError] = useState<string | null>(null);
   const [isAdding, startAdding] = useTransition();
 

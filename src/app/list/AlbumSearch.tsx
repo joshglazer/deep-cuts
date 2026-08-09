@@ -21,6 +21,7 @@ export function AlbumSearch() {
   const [query, setQuery] = useState("");
   const [artists, setArtists] = useState<ArtistSearchResult[]>([]);
   const [albums, setAlbums] = useState<AlbumSearchResult[]>([]);
+  const [addedAlbumIds, setAddedAlbumIds] = useState<string[]>([]);
   const [view, setView] = useState<"artist" | "album">("album");
   const [includeSingles, setIncludeSingles] = useState(false);
   const [isSearching, startSearch] = useTransition();
@@ -38,6 +39,7 @@ export function AlbumSearch() {
         const result = await search(query);
         setArtists(result.artists);
         setAlbums(result.albums);
+        setAddedAlbumIds(result.addedAlbumIds);
       } catch {
         setSearchError("Couldn't search Spotify. Try again.");
       }
@@ -110,7 +112,7 @@ export function AlbumSearch() {
         <VStack gap="sm">
           <IncludeSinglesToggle value={includeSingles} onChange={setIncludeSingles} />
           {visibleAlbums.length > 0 ? (
-            <AddableAlbumList albums={visibleAlbums} />
+            <AddableAlbumList albums={visibleAlbums} addedAlbumIds={addedAlbumIds} />
           ) : (
             <EmptyState
               title="No full albums found"

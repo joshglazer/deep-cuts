@@ -23,11 +23,10 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
   const sort = parseAlbumSort(sortParam);
   const showCompleted = completedParam === "show";
 
-  // TODO (backend build-out): add a secondary index on spotifyUserId so this
-  // scales past a full table scan, and add UI for searching Spotify and
-  // adding artists (album search/add already lives at /list/search).
-  const { data: albums } = await dataClient.models.Album.list({
-    filter: { spotifyUserId: { eq: spotifyUserId } },
+  // TODO (backend build-out): add UI for searching Spotify and adding
+  // artists (album search/add already lives at /list/search).
+  const { data: albums } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+    spotifyUserId,
   });
 
   const hasCompletedAlbums = albums.some((album) => album.completedAt);

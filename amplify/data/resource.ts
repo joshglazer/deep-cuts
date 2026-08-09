@@ -28,7 +28,10 @@ const schema = a
         imageUrl: a.string(),
         addedAt: a.datetime().required(),
       })
-      .authorization((allow) => [allow.publicApiKey()]),
+      .authorization((allow) => [allow.publicApiKey()])
+      // Otherwise the account-deletion scan for a user's artists is a full
+      // table scan across every user.
+      .secondaryIndexes((index) => [index("spotifyUserId")]),
 
     Album: a
       .model({
@@ -49,7 +52,8 @@ const schema = a
         completedAt: a.datetime(),
         // Denormalized cache of this album's played tracks, kept in sync by
         // poll-spotify and by resetTrackProgress/resetAlbumProgress — lets
-        // the list/artist pages read progress straight off Album.list()
+        // the list/artist pages read progress straight off the same
+        // listAlbumBySpotifyUserIdAndSpotifyAlbumId query they already run
         // instead of scanning ListenEvent (unbounded by a user's total play
         // count) on every page load. Albums that existed before this field
         // was added need a one-time backfill (see
@@ -58,7 +62,13 @@ const schema = a
         playedTrackIds: a.string().array(),
         lastPlayedAt: a.datetime(),
       })
-      .authorization((allow) => [allow.publicApiKey()]),
+      .authorization((allow) => [allow.publicApiKey()])
+      // Otherwise every lookup here (list page, artist/album pages, activity,
+      // add/reset actions, account deletion) is a full table scan across
+      // every user's albums.
+      .secondaryIndexes((index) => [
+        index("spotifyUserId").sortKeys(["spotifyAlbumId"]),
+      ]),
 
     // One row per play, not per track — replaying a track writes another
     // event with a later playedAt rather than updating the existing one

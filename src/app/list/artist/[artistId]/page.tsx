@@ -28,12 +28,13 @@ export default async function ArtistListPage({
   const sort = parseAlbumSort(sortParam);
   const showCompleted = completedParam === "show";
 
-  const { data: albums } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: spotifyUserId },
-      spotifyArtistId: { eq: artistId },
-    },
-  });
+  // The index only covers spotifyUserId+spotifyAlbumId, so narrow to this
+  // artist client-side — still scoped to just this user's albums via the
+  // index, rather than a scan across every user's.
+  const { data: userAlbums } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId(
+    { spotifyUserId }
+  );
+  const albums = userAlbums.filter((album) => album.spotifyArtistId === artistId);
 
   const artistName = albums[0]?.artistName ?? "Artist";
   const hasCompletedAlbums = albums.some((album) => album.completedAt);

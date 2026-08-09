@@ -8,8 +8,8 @@ export async function deleteAccount() {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
   const [{ data: albums }, { data: artists }, listenEvents] = await Promise.all([
-    dataClient.models.Album.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
-    dataClient.models.Artist.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
+    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({ spotifyUserId }),
+    dataClient.models.Artist.listArtistBySpotifyUserId({ spotifyUserId }),
     listAllListenEvents({ spotifyUserId }),
   ]);
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
+import { auth, requireSignedIn, requireSpotifyUserIdOrThrow } from "@/auth";
 import { dataClient } from "@/lib/amplify-server";
 import { listAllListenEvents } from "@/lib/listenEvents";
 import { albumHref, artistListHref } from "./routes";
@@ -42,21 +42,54 @@ function toAlbumSearchResult(album: SpotifyAlbum): AlbumSearchResult {
   };
 }
 
+// The preview-login path (see requireSignedIn's doc comment in auth.ts) has
+// no spotifyUserId, so there's nothing to check membership against there.
+//
+// Fetches the user's whole album-id set rather than querying just the
+// current search/discography result ids, since DynamoDB's Query API (and
+// this Amplify Data SDK's filter types) has no "spotifyAlbumId IN (...)"
+// condition — only a single eq/range condition per query. At real-world
+// list sizes this is still one cheap indexed query scoped to the user's own
+// partition, not a scan. If it ever needs to shrink further, the fallback is
+// N parallel per-id queries via listAlbumBySpotifyUserIdAndSpotifyAlbumId
+// (Promise.all over the result ids) instead of this single bulk fetch.
+async function getUserAlbumIds(spotifyUserId: string | undefined): Promise<Set<string>> {
+  if (!spotifyUserId) return new Set();
+  const { data } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+    spotifyUserId,
+  });
+  return new Set(data.map((album) => album.spotifyAlbumId));
+}
+
+// Narrows the user's full album-id set down to just the ids present in this
+// result page, rather than returning the whole set to the client — the
+// user's list only grows over time, while a result page stays small.
+function addedAlbumIdsIn(albums: AlbumSearchResult[], userAlbumIds: Set<string>): string[] {
+  return albums.map((album) => album.spotifyAlbumId).filter((id) => userAlbumIds.has(id));
+}
+
 export async function search(query: string): Promise<{
   artists: ArtistSearchResult[];
   albums: AlbumSearchResult[];
+  addedAlbumIds: string[];
 }> {
   await requireSignedIn();
-  if (!query.trim()) return { artists: [], albums: [] };
+  if (!query.trim()) return { artists: [], albums: [], addedAlbumIds: [] };
 
-  const { artists, albums } = await searchSpotify(query);
+  const session = await auth();
+  const [{ artists, albums }, userAlbumIds] = await Promise.all([
+    searchSpotify(query),
+    getUserAlbumIds(session?.spotifyUserId),
+  ]);
+  const mappedAlbums = albums.items.map(toAlbumSearchResult);
   return {
     artists: artists.items.map((artist) => ({
       spotifyArtistId: artist.id,
       name: artist.name,
       imageUrl: artist.images[0]?.url,
     })),
-    albums: albums.items.map(toAlbumSearchResult),
+    albums: mappedAlbums,
+    addedAlbumIds: addedAlbumIdsIn(mappedAlbums, userAlbumIds),
   };
 }
 
@@ -64,12 +97,15 @@ export async function getArtistDiscography(artistId: string): Promise<{
   artistName: string;
   imageUrl?: string;
   albums: AlbumSearchResult[];
+  addedAlbumIds: string[];
 }> {
   await requireSignedIn();
 
-  const [{ artists }, spotifyAlbums] = await Promise.all([
+  const session = await auth();
+  const [{ artists }, spotifyAlbums, userAlbumIds] = await Promise.all([
     getArtists([artistId]),
     getArtistAlbums(artistId),
+    getUserAlbumIds(session?.spotifyUserId),
   ]);
   const artist = artists[0];
 
@@ -95,20 +131,18 @@ export async function getArtistDiscography(artistId: string): Promise<{
     artistName: artist?.name ?? "Artist",
     imageUrl: artist?.images[0]?.url,
     albums,
+    addedAlbumIds: addedAlbumIdsIn(albums, userAlbumIds),
   };
 }
 
 export async function addAlbum(album: AlbumSearchResult) {
   const spotifyUserId = await requireSpotifyUserIdOrThrow();
 
-  // No secondary index on spotifyUserId yet (see list/page.tsx TODO), so
-  // this dedupe check is a full table scan like the rest of this page.
-  const { data: existing } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: spotifyUserId },
+  const { data: existing } =
+    await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
       spotifyAlbumId: { eq: album.spotifyAlbumId },
-    },
-  });
+    });
   if (existing.length > 0) return;
 
   await dataClient.models.Album.create({
@@ -226,15 +260,12 @@ export async function resetTrackProgress(spotifyAlbumId: string, spotifyTrackId:
   );
   if (excludedCount === 0) return;
 
-  // Dropping below totalTracks means the album is no longer fully played —
-  // no secondary index on spotifyAlbumId alone, so this is a filtered scan
-  // like addAlbum's dedupe check above.
-  const { data: albums } = await dataClient.models.Album.list({
-    filter: {
-      spotifyUserId: { eq: spotifyUserId },
+  // Dropping below totalTracks means the album is no longer fully played.
+  const { data: albums } =
+    await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+      spotifyUserId,
       spotifyAlbumId: { eq: spotifyAlbumId },
-    },
-  });
+    });
   const album = albums[0];
   if (album) {
     await dataClient.models.Album.update({

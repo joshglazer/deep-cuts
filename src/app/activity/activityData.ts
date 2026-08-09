@@ -16,7 +16,7 @@ const RECENT_ACTIVITY_LIMIT = 50;
 export async function getRecentActivity(spotifyUserId: string): Promise<RecentActivityItem[]> {
   const [events, { data: albums }] = await Promise.all([
     listAllListenEvents({ spotifyUserId }),
-    dataClient.models.Album.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
+    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({ spotifyUserId }),
   ]);
 
   const albumsById = new Map(albums.map((album) => [album.spotifyAlbumId, album]));

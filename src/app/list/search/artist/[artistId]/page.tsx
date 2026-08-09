@@ -13,7 +13,7 @@ export default async function ArtistDiscographyPage({
   await requireSpotifyUserIdOrRedirect();
 
   const { artistId } = await params;
-  const { artistName, albums } = await getArtistDiscography(artistId);
+  const { artistName, albums, addedAlbumIds } = await getArtistDiscography(artistId);
 
   return (
     <PageShell
@@ -23,7 +23,7 @@ export default async function ArtistDiscographyPage({
         { label: artistName },
       ]}
     >
-      <ArtistDiscography albums={albums} />
+      <ArtistDiscography albums={albums} addedAlbumIds={addedAlbumIds} />
     </PageShell>
   );
 }
