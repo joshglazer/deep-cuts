@@ -46,7 +46,7 @@ describe("AlbumTracksPage", () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
 
     render(await AlbumTracksPage({ params }));
 
@@ -59,7 +59,7 @@ describe("AlbumTracksPage", () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
 
     render(await AlbumTracksPage({ params }));
 
@@ -79,7 +79,7 @@ describe("AlbumTracksPage", () => {
         ],
       }
     );
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
 
     render(await AlbumTracksPage({ params }));
 
@@ -97,7 +97,7 @@ describe("AlbumTracksPage", () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ completedAt: "2024-03-05T00:00:00.000Z" }],
     });
 

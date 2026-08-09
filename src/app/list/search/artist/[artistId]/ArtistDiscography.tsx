@@ -9,9 +9,13 @@ import { VStack } from "@/design/atoms/Stack";
 
 interface ArtistDiscographyProps {
   albums: AlbumSearchResult[];
+  addedAlbumIds?: string[];
 }
 
-export function ArtistDiscography({ albums }: Readonly<ArtistDiscographyProps>) {
+export function ArtistDiscography({
+  albums,
+  addedAlbumIds = [],
+}: Readonly<ArtistDiscographyProps>) {
   const [includeSingles, setIncludeSingles] = useState(false);
 
   if (albums.length === 0) {
@@ -31,7 +35,7 @@ export function ArtistDiscography({ albums }: Readonly<ArtistDiscographyProps>) 
     <VStack gap="md">
       <IncludeSinglesToggle value={includeSingles} onChange={setIncludeSingles} />
       {visibleAlbums.length > 0 ? (
-        <AddableAlbumList albums={visibleAlbums} />
+        <AddableAlbumList albums={visibleAlbums} addedAlbumIds={addedAlbumIds} />
       ) : (
         <EmptyState
           title="No full albums found"

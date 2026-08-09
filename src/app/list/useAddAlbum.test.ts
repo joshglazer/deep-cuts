@@ -18,6 +18,12 @@ const album = {
 };
 
 describe("useAddAlbum", () => {
+  it("seeds addedIds from initialAddedIds", () => {
+    const { result } = renderHook(() => useAddAlbum(["album1"]));
+
+    expect(result.current.addedIds.has("album1")).toBe(true);
+  });
+
   it("marks an album as added after a successful add", async () => {
     addAlbum.mockResolvedValue(undefined);
     const { result } = renderHook(() => useAddAlbum());

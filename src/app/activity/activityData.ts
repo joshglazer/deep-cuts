@@ -17,7 +17,7 @@ export async function getRecentActivity(spotifyUserId: string): Promise<RecentAc
     dataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId({
       spotifyUserId,
     }),
-    dataClient.models.Album.list({ filter: { spotifyUserId: { eq: spotifyUserId } } }),
+    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({ spotifyUserId }),
   ]);
 
   const albumsById = new Map(albums.map((album) => [album.spotifyAlbumId, album]));

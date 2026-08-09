@@ -10,10 +10,14 @@ import { VStack } from "@/design/atoms/Stack";
 
 interface AddableAlbumListProps {
   albums: AlbumSearchResult[];
+  addedAlbumIds?: string[];
 }
 
-export function AddableAlbumList({ albums }: Readonly<AddableAlbumListProps>) {
-  const { addedIds, isAdding, add, error, setError } = useAddAlbum();
+export function AddableAlbumList({
+  albums,
+  addedAlbumIds = [],
+}: Readonly<AddableAlbumListProps>) {
+  const { addedIds, isAdding, add, error, setError } = useAddAlbum(addedAlbumIds);
 
   return (
     <VStack gap="md">
@@ -36,7 +40,7 @@ export function AddableAlbumList({ albums }: Readonly<AddableAlbumListProps>) {
               artistHref={artistSearchHref(album.spotifyArtistId)}
               endContent={
                 <Button
-                  label={added ? "Added" : "Add"}
+                  label={added ? "Already added" : "Add"}
                   variant={added ? "secondary" : "primary"}
                   size="sm"
                   isDisabled={added || isAdding}

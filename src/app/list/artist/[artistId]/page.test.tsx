@@ -48,7 +48,7 @@ function searchParams(params: { sort?: string; completed?: string } = {}) {
 describe("ArtistListPage", () => {
   it("shows an empty state and falls back to 'Artist' as the title when there are no albums", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
@@ -61,7 +61,7 @@ describe("ArtistListPage", () => {
 
   it("uses the artist's name from the albums as the page title", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [album()] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [album()] });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
       { data: [] }
     );
@@ -74,7 +74,7 @@ describe("ArtistListPage", () => {
 
   it("shows an all-caught-up empty state when every album is completed and completed is hidden", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [album({ completedAt: "2024-01-01" })],
     });
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(

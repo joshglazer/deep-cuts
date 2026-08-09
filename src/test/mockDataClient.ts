@@ -9,14 +9,14 @@ export function createMockDataClient() {
   return {
     models: {
       Album: {
-        list: vi.fn(),
+        listAlbumBySpotifyUserIdAndSpotifyAlbumId: vi.fn(),
         get: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
       },
       Artist: {
-        list: vi.fn(),
+        listArtistBySpotifyUserId: vi.fn(),
         delete: vi.fn(),
       },
       ListenEvent: {

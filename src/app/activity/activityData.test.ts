@@ -15,7 +15,7 @@ describe("getRecentActivity", () => {
         { id: "e2", trackName: "Karma Police", playedAt: "2024-01-03T00:00:00Z", spotifyAlbumId: "album1" },
       ],
     });
-    mockDataClient.models.Album.list.mockResolvedValue({
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [
         {
           spotifyAlbumId: "album1",
@@ -51,16 +51,18 @@ describe("getRecentActivity", () => {
     expect(
       mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId
     ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
-    expect(mockDataClient.models.Album.list).toHaveBeenCalledWith({
-      filter: { spotifyUserId: { eq: "user1" } },
-    });
+    expect(
+      mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId
+    ).toHaveBeenCalledWith({ spotifyUserId: "user1" });
   });
 
   it("omits album details when the event's album isn't in the user's list", async () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [{ id: "e1", trackName: "Airbag", playedAt: "2024-01-01T00:00:00Z", spotifyAlbumId: null }],
     });
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [],
+    });
 
     const result = await getRecentActivity("user1");
 
@@ -90,7 +92,9 @@ describe("getRecentActivity", () => {
         },
       ],
     });
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [],
+    });
 
     const result = await getRecentActivity("user1");
 
@@ -101,7 +105,9 @@ describe("getRecentActivity", () => {
     mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [],
     });
-    mockDataClient.models.Album.list.mockResolvedValue({ data: [] });
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [],
+    });
 
     const result = await getRecentActivity("user1");
 
