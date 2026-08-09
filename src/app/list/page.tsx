@@ -4,7 +4,6 @@ import { getArtists } from "@/lib/spotify";
 import { PageShell } from "@/components/PageShell";
 import { AlbumList } from "./AlbumList";
 import { FilterPopover } from "./FilterPopover";
-import { getListenStatsByAlbum } from "./listenProgress";
 import { artistListHref } from "./routes";
 import { parseAlbumSort, sortAlbums } from "./sortAlbums";
 import { AddIconButton } from "@/design/molecules/AddIconButton";
@@ -26,10 +25,9 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
 
   // TODO (backend build-out): add UI for searching Spotify and adding
   // artists (album search/add already lives at /list/search).
-  const [{ data: albums }, listenStatsByAlbum] = await Promise.all([
-    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({ spotifyUserId }),
-    getListenStatsByAlbum(spotifyUserId),
-  ]);
+  const { data: albums } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({
+    spotifyUserId,
+  });
 
   const hasCompletedAlbums = albums.some((album) => album.completedAt);
   const visibleAlbums = albums.filter((album) =>
@@ -37,7 +35,7 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
   );
   const hasNoVisibleAlbums = albums.length > 0 && visibleAlbums.length === 0;
 
-  const sortedAlbums = sortAlbums(visibleAlbums, sort, listenStatsByAlbum);
+  const sortedAlbums = sortAlbums(visibleAlbums, sort);
 
   const artistGroups = Array.from(
     sortedAlbums
@@ -132,7 +130,7 @@ export default async function ListPage({ searchParams }: Readonly<ListPageProps>
           ))}
         </VStack>
       ) : (
-        <AlbumList albums={sortedAlbums} listenStatsByAlbum={listenStatsByAlbum} />
+        <AlbumList albums={sortedAlbums} />
       )}
     </PageShell>
   );

@@ -70,19 +70,19 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
     existingEvents.map((event) => `${event.spotifyTrackId}|${event.playedAt}`)
   );
 
-  // Completion is only checked against albums touched by this poll (bounded
-  // by Spotify's ~50-item recently-played page, regardless of list size),
-  // not every album on the list — so this only needs played-track sets for that
-  // subset, seeded from history in case some of their tracks were played
-  // outside this poll's window.
+  // Progress is only touched for albums this poll actually saw a play for
+  // (bounded by Spotify's ~50-item recently-played page, regardless of list
+  // size), seeded from each album's own denormalized playedTrackIds/
+  // lastPlayedAt (kept up to date across polls) rather than rescanning the
+  // user's whole event history.
   const matchedAlbumIds = new Set(matches.map((item) => item.track.album.id));
   const playedTrackIdsByAlbum = new Map<string, Set<string>>();
-  for (const event of existingEvents) {
-    if (event.excludedAt) continue;
-    if (!event.spotifyAlbumId || !matchedAlbumIds.has(event.spotifyAlbumId)) continue;
-    const played = playedTrackIdsByAlbum.get(event.spotifyAlbumId) ?? new Set<string>();
-    played.add(event.spotifyTrackId);
-    playedTrackIdsByAlbum.set(event.spotifyAlbumId, played);
+  const lastPlayedAtByAlbum = new Map<string, string>();
+  for (const albumId of matchedAlbumIds) {
+    const album = listedAlbumsById.get(albumId);
+    const priorPlayedTrackIds = album?.playedTrackIds?.filter((id): id is string => id != null);
+    playedTrackIdsByAlbum.set(albumId, new Set(priorPlayedTrackIds));
+    if (album?.lastPlayedAt) lastPlayedAtByAlbum.set(albumId, album.lastPlayedAt);
   }
 
   for (const item of matches) {
@@ -102,23 +102,36 @@ async function pollUser(spotifyUserId: string, storedRefreshToken: string) {
       continue;
     }
 
-    const played = playedTrackIdsByAlbum.get(item.track.album.id) ?? new Set<string>();
+    const albumId = item.track.album.id;
+    const played = playedTrackIdsByAlbum.get(albumId) ?? new Set<string>();
     played.add(item.track.id);
-    playedTrackIdsByAlbum.set(item.track.album.id, played);
+    playedTrackIdsByAlbum.set(albumId, played);
+
+    const lastPlayedAt = lastPlayedAtByAlbum.get(albumId);
+    if (!lastPlayedAt || item.played_at > lastPlayedAt) {
+      lastPlayedAtByAlbum.set(albumId, item.played_at);
+    }
   }
 
   for (const albumId of matchedAlbumIds) {
     const album = listedAlbumsById.get(albumId);
-    if (!album || album.completedAt || album.totalTracks == null) continue;
-    const playedCount = playedTrackIdsByAlbum.get(albumId)?.size ?? 0;
-    if (playedCount < album.totalTracks) continue;
+    if (!album) continue;
+
+    const playedTrackIds = Array.from(playedTrackIdsByAlbum.get(albumId) ?? []);
+    const completedAt =
+      album.completedAt ??
+      (album.totalTracks != null && playedTrackIds.length >= album.totalTracks
+        ? new Date().toISOString()
+        : undefined);
 
     const { errors: updateErrors } = await client.models.Album.update({
       id: album.id,
-      completedAt: new Date().toISOString(),
+      playedTrackIds,
+      lastPlayedAt: lastPlayedAtByAlbum.get(albumId),
+      completedAt,
     });
     if (updateErrors) {
-      console.error(`poll-spotify: failed to mark album ${album.id} completed`, updateErrors);
+      console.error(`poll-spotify: failed to update progress for album ${album.id}`, updateErrors);
     }
   }
 }

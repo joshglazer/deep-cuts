@@ -1,6 +1,5 @@
 import type { Schema } from "../../../amplify/data/resource";
 import { AlbumRowActionMenu } from "./AlbumRowActionMenu";
-import type { AlbumListenStats } from "./listenProgress";
 import { albumHref, artistListHref } from "./routes";
 import { AlbumRow } from "@/design/molecules/AlbumRow";
 import { VStack } from "@/design/atoms/Stack";
@@ -21,14 +20,14 @@ type ListedAlbum = Pick<
   | "spotifyArtistId"
   | "totalTracks"
   | "completedAt"
+  | "playedTrackIds"
 >;
 
 interface AlbumListProps {
   albums: ListedAlbum[];
-  listenStatsByAlbum: Map<string, AlbumListenStats>;
 }
 
-export function AlbumList({ albums, listenStatsByAlbum }: Readonly<AlbumListProps>) {
+export function AlbumList({ albums }: Readonly<AlbumListProps>) {
   return (
     <VStack gap="sm">
       {albums.map((album) => (
@@ -40,7 +39,7 @@ export function AlbumList({ albums, listenStatsByAlbum }: Readonly<AlbumListProp
           progress={
             album.totalTracks != null
               ? {
-                  played: listenStatsByAlbum.get(album.spotifyAlbumId)?.playedTrackIds.size ?? 0,
+                  played: album.playedTrackIds?.length ?? 0,
                   total: album.totalTracks,
                 }
               : undefined

@@ -3,7 +3,6 @@ import { dataClient } from "@/lib/amplify-server";
 import { PageShell } from "@/components/PageShell";
 import { AlbumList } from "@/app/list/AlbumList";
 import { FilterPopover } from "@/app/list/FilterPopover";
-import { getListenStatsByAlbum } from "@/app/list/listenProgress";
 import { artistSearchHref } from "@/app/list/routes";
 import {
   ARTIST_PAGE_ALBUM_SORT_OPTIONS,
@@ -32,10 +31,9 @@ export default async function ArtistListPage({
   // The index only covers spotifyUserId+spotifyAlbumId, so narrow to this
   // artist client-side — still scoped to just this user's albums via the
   // index, rather than a scan across every user's.
-  const [{ data: userAlbums }, listenStatsByAlbum] = await Promise.all([
-    dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId({ spotifyUserId }),
-    getListenStatsByAlbum(spotifyUserId),
-  ]);
+  const { data: userAlbums } = await dataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId(
+    { spotifyUserId }
+  );
   const albums = userAlbums.filter((album) => album.spotifyArtistId === artistId);
 
   const artistName = albums[0]?.artistName ?? "Artist";
@@ -45,7 +43,7 @@ export default async function ArtistListPage({
   );
   const hasNoVisibleAlbums = albums.length > 0 && visibleAlbums.length === 0;
 
-  const sortedAlbums = sortAlbums(visibleAlbums, sort, listenStatsByAlbum);
+  const sortedAlbums = sortAlbums(visibleAlbums, sort);
 
   return (
     <PageShell
@@ -85,7 +83,7 @@ export default async function ArtistListPage({
           }
         />
       ) : (
-        <AlbumList albums={sortedAlbums} listenStatsByAlbum={listenStatsByAlbum} />
+        <AlbumList albums={sortedAlbums} />
       )}
     </PageShell>
   );

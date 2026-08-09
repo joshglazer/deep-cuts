@@ -7,7 +7,6 @@ import {
   sortAlbums,
   type SortableAlbum,
 } from "./sortAlbums";
-import type { AlbumListenStats } from "./listenProgress";
 
 function makeAlbum(overrides: Partial<SortableAlbum>): SortableAlbum {
   return {
@@ -17,10 +16,6 @@ function makeAlbum(overrides: Partial<SortableAlbum>): SortableAlbum {
     spotifyAlbumId: "id",
     ...overrides,
   };
-}
-
-function stats(lastPlayedAt?: string): AlbumListenStats {
-  return { playedTrackIds: new Set(), lastPlayedAt };
 }
 
 describe("parseAlbumSort", () => {
@@ -52,17 +47,17 @@ describe("sortAlbums", () => {
   ];
 
   it("sorts by recently-added, newest first", () => {
-    const result = sortAlbums(albums, "recently-added", new Map());
+    const result = sortAlbums(albums, "recently-added");
     expect(result.map((a) => a.spotifyAlbumId)).toEqual(["b", "c", "a"]);
   });
 
   it("sorts by album name alphabetically, tie-broken by artist name", () => {
-    const result = sortAlbums(albums, "album", new Map());
+    const result = sortAlbums(albums, "album");
     expect(result.map((a) => a.name)).toEqual(["Alpha", "Mid", "Zeta"]);
   });
 
   it("sorts by artist name alphabetically, tie-broken by album name", () => {
-    const result = sortAlbums(albums, "artist", new Map());
+    const result = sortAlbums(albums, "artist");
     expect(result.map((a) => a.artistName)).toEqual(["Alpha Artist", "Beta", "Zulu"]);
   });
 
@@ -71,36 +66,41 @@ describe("sortAlbums", () => {
       makeAlbum({ name: "B Album", artistName: "Same", spotifyAlbumId: "x" }),
       makeAlbum({ name: "A Album", artistName: "Same", spotifyAlbumId: "y" }),
     ];
-    const result = sortAlbums(tied, "artist", new Map());
+    const result = sortAlbums(tied, "artist");
     expect(result.map((a) => a.spotifyAlbumId)).toEqual(["y", "x"]);
   });
 
   it("sorts recently-played albums by lastPlayedAt, most recent first", () => {
-    const listenStats = new Map([
-      ["a", stats("2024-05-01")],
-      ["b", stats("2024-06-01")],
-    ]);
-    const result = sortAlbums(albums, "recently-played", listenStats);
+    const withPlays = [
+      makeAlbum({ spotifyAlbumId: "a", addedAt: "2024-01-01", lastPlayedAt: "2024-05-01" }),
+      makeAlbum({ spotifyAlbumId: "b", addedAt: "2024-03-01", lastPlayedAt: "2024-06-01" }),
+      makeAlbum({ spotifyAlbumId: "c", addedAt: "2024-02-01" }),
+    ];
+    const result = sortAlbums(withPlays, "recently-played");
     // b played most recently, then a; c has never been played so sorts last.
     expect(result.map((a) => a.spotifyAlbumId)).toEqual(["b", "a", "c"]);
   });
 
   it("places unplayed albums after played ones, ordered by most recently added among themselves", () => {
-    const listenStats = new Map([["a", stats("2024-05-01")]]);
-    const result = sortAlbums(albums, "recently-played", listenStats);
+    const withPlays = [
+      makeAlbum({ spotifyAlbumId: "a", addedAt: "2024-01-01", lastPlayedAt: "2024-05-01" }),
+      makeAlbum({ spotifyAlbumId: "b", addedAt: "2024-03-01" }),
+      makeAlbum({ spotifyAlbumId: "c", addedAt: "2024-02-01" }),
+    ];
+    const result = sortAlbums(withPlays, "recently-played");
     // a has been played; b and c have not, so they fall back to addedAt desc
     // (b added 2024-03-01, c added 2024-02-01).
     expect(result.map((a) => a.spotifyAlbumId)).toEqual(["a", "b", "c"]);
   });
 
   it("orders entirely-unplayed albums by most recently added", () => {
-    const result = sortAlbums(albums, "recently-played", new Map());
+    const result = sortAlbums(albums, "recently-played");
     expect(result.map((a) => a.spotifyAlbumId)).toEqual(["b", "c", "a"]);
   });
 
   it("does not mutate the input array", () => {
     const original = [...albums];
-    sortAlbums(albums, "album", new Map());
+    sortAlbums(albums, "album");
     expect(albums).toEqual(original);
   });
 });

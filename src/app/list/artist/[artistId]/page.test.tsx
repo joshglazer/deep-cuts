@@ -49,9 +49,6 @@ describe("ArtistListPage", () => {
   it("shows an empty state and falls back to 'Artist' as the title when there are no albums", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
     mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [] });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
 
     render(await ArtistListPage({ params, searchParams: searchParams() }));
 
@@ -61,10 +58,9 @@ describe("ArtistListPage", () => {
 
   it("uses the artist's name from the albums as the page title", async () => {
     requireSpotifyUserIdOrRedirect.mockResolvedValue("user1");
-    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({ data: [album()] });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
+    mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
+      data: [album()],
+    });
 
     render(await ArtistListPage({ params, searchParams: searchParams() }));
 
@@ -77,9 +73,6 @@ describe("ArtistListPage", () => {
     mockDataClient.models.Album.listAlbumBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue({
       data: [album({ completedAt: "2024-01-01" })],
     });
-    mockDataClient.models.ListenEvent.listListenEventBySpotifyUserIdAndSpotifyAlbumId.mockResolvedValue(
-      { data: [] }
-    );
 
     render(await ArtistListPage({ params, searchParams: searchParams() }));
 
