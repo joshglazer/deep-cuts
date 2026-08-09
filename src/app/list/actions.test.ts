@@ -335,7 +335,7 @@ describe("resetAlbumProgress", () => {
     expect(mockDataClient.models.Album.update).toHaveBeenCalledWith({
       id: "row1",
       playedTrackIds: [],
-      lastPlayedAt: undefined,
+      lastPlayedAt: null,
       completedAt: null,
     });
     expect(revalidatePath).toHaveBeenCalledWith("/list");

@@ -174,7 +174,7 @@ export async function removeAlbum(id: string) {
 interface ExcludeListenEventsResult {
   excludedCount: number;
   playedTrackIds: string[];
-  lastPlayedAt?: string;
+  lastPlayedAt: string | null;
 }
 
 /**
@@ -206,9 +206,9 @@ async function excludeListenEvents(
 
   const remaining = events.filter((event) => !event.excludedAt && !matchIds.has(event.id));
   const playedTrackIds = Array.from(new Set(remaining.map((event) => event.spotifyTrackId)));
-  const lastPlayedAt = remaining.reduce<string | undefined>(
+  const lastPlayedAt = remaining.reduce<string | null>(
     (latest, event) => (!latest || event.playedAt > latest ? event.playedAt : latest),
-    undefined
+    null
   );
 
   return { excludedCount: matches.length, playedTrackIds, lastPlayedAt };
