@@ -123,6 +123,9 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: "apiKey",
-    apiKeyAuthorizationMode: { expiresInDays: 30 },
+    // Max allowed by Amplify. A shorter expiry silently breaks the deployed
+    // site whenever main goes this long without a redeploy to mint a new
+    // key (see git history around 2026-09-22 for the incident this fixed).
+    apiKeyAuthorizationMode: { expiresInDays: 365 },
   },
 });
